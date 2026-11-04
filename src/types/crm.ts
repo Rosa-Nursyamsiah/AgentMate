@@ -1,0 +1,146 @@
+export type ClientSegment = 'buyer' | 'tenant' | 'seller' | 'landlord';
+
+export type PropertyType = 
+  | 'Rumah Tapak / Cluster'
+  | 'Apartemen / Kondominium'
+  | 'Ruko / Komersial'
+  | 'Villa Tropis'
+  | 'Tanah / Kavling'
+  | 'Gudang / Industri';
+
+export type LegalCertificate = 
+  | 'SHM (Sertifikat Hak Milik)'
+  | 'HGB (Hak Guna Bangunan)'
+  | 'Strata Title'
+  | 'Girik / AJB'
+  | 'PPJB Lunas';
+
+export type PropertyStatus = 'available' | 'under_offer' | 'sold' | 'rented';
+
+export type PipelineStage = 
+  | 'new_lead'
+  | 'site_visit'
+  | 'negotiation'
+  | 'booking_fee'
+  | 'closed_won';
+
+export type UserRole = 'user' | 'admin' | 'super_admin';
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  status: UserStatus;
+  agencyName: string;
+  licenseNumber?: string;
+  city: string;
+  avatarUrl?: string;
+  registeredAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  notes?: string;
+  password?: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  segment: ClientSegment;
+  status: 'active' | 'nurturing' | 'inactive';
+  preferredLocations: string[];
+  preferredTypes: PropertyType[];
+  budgetMin: number;
+  budgetMax: number;
+  paymentPreference?: 'KPR Bank' | 'Cash Keras' | 'Cash Bertahap';
+  notes?: string;
+  source: 'WhatsApp' | 'Instagram' | 'Referral' | 'Walk-in' | 'Portal Properti' | 'Spanduk / Banner';
+  createdAt: string;
+  lastContactedAt?: string;
+  nextFollowUpDate?: string;
+}
+
+export interface Property {
+  id: string;
+  title: string;
+  address: string;
+  city: string;
+  neighborhood: string;
+  propertyType: PropertyType;
+  certificateType: LegalCertificate;
+  price: number;
+  listingType: 'sale' | 'rent';
+  status: PropertyStatus;
+  bedrooms: number;
+  bathrooms: number;
+  areaLandSqft: number; // LT (m²)
+  areaBuildingSqft: number; // LB (m²)
+  commissionRate: number; // e.g. 2.5%
+  description: string;
+  features: string[];
+  imageUrl?: string;
+  svgPreset: 'condo' | 'villa' | 'townhouse' | 'penthouse';
+  sellerClientId?: string;
+  sellerName?: string;
+  createdAt: string;
+}
+
+export interface Deal {
+  id: string;
+  title: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyPrice: number;
+  stage: PipelineStage;
+  dealValue: number;
+  estimatedCommission: number;
+  probabilityPercent: number;
+  targetClosingDate: string;
+  lastActivityDate: string;
+  bookingFeeAmount?: number;
+  paymentMethod?: 'KPR Bank' | 'Cash Keras' | 'Cash Bertahap';
+  notes?: string;
+}
+
+export interface SiteVisit {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  propertyId: string;
+  propertyTitle: string;
+  visitDate: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  interestScore: 1 | 2 | 3 | 4 | 5;
+  feedback: string;
+  agreedNextStep: string;
+  nextFollowUpDate?: string;
+  tags: string[];
+}
+
+export interface FollowUpReminder {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  propertyTitle?: string;
+  dueDate: string;
+  priority: 'high' | 'medium' | 'low';
+  note: string;
+  completed: boolean;
+  type: 'call' | 'whatsapp' | 'viewing' | 'contract';
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
