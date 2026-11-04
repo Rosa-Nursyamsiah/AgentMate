@@ -199,9 +199,11 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Real-time polling when Super Admin is viewing: checks for new registrations across network/devices
+  // Real-time polling:
+  // 1. When Super Admin is viewing: checks for new registrations across network/devices
+  // 2. When a pending user is waiting: automatically unlocks their workspace the moment Super Admin approves them!
   useEffect(() => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin && currentUser?.status !== 'pending') return;
     const interval = setInterval(() => {
       syncUsersFromServer().then((remoteUsers) => {
         if (remoteUsers && remoteUsers.length > 0) {
@@ -210,7 +212,7 @@ export const App: React.FC = () => {
       });
     }, 3500);
     return () => clearInterval(interval);
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, currentUser?.status]);
 
   useEffect(() => {
     if (currentUserId) {
@@ -247,7 +249,7 @@ export const App: React.FC = () => {
     setIsAuthModalOpen(false);
   }, []);
 
-  const handleLogin = useCallback((email: string, password?: string) => {
+  const handleLogin = useCallback(async (email: string, password?: string) => {
     const trimmedEmail = email.trim();
     const trimmedPassword = (password || '').trim();
 
@@ -259,13 +261,16 @@ export const App: React.FC = () => {
       return { success: false, message: 'Silakan masukkan kata sandi Anda.' };
     }
 
-    const currentUsers = loadUsersFromStorage();
+    // Synchronize latest users and approval status from Supabase Cloud
+    let currentUsers = await syncUsersFromServer();
+    setUsers(currentUsers);
+
     const isSuper = isSuperAdminEmail(trimmedEmail);
     const norm = normalizeEmail(trimmedEmail);
 
     let found = currentUsers.find((u) => normalizeEmail(u.email) === norm);
 
-    // If logging in as Super Admin and not yet found in local users array, load default Super Admin
+    // If logging in as Super Admin and not yet found in users array, load default Super Admin
     if (!found && isSuper) {
       found = DEFAULT_USERS[0];
       const updated = [found, ...currentUsers];
