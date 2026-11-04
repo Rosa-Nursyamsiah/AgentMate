@@ -1,5 +1,21 @@
 [
   {
+    "id": "user-1793770312874",
+    "name": "Rosa Nursyamsiah",
+    "email": "rosamaery73@gmail.com",
+    "password": "cvco90090",
+    "phone": "082118105829",
+    "role": "user",
+    "status": "approved",
+    "agencyName": "Rumah Bekasi",
+    "city": "Bekasi",
+    "licenseNumber": "AREBI-104",
+    "registeredAt": "2026-11-04",
+    "notes": "Pendaftaran baru via form online sebagai Agen Properti. Menunggu persetujuan Super Admin (Ocha Syamsiah).",
+    "reviewedAt": "2026-11-04",
+    "reviewedBy": "Ocha Syamsiah (Super Admin)"
+  },
+  {
     "id": "user-superadmin",
     "name": "Ocha Syamsiah",
     "email": "ochasyamsiah16@gmail.com",
@@ -54,12 +70,14 @@
     "password": "password123",
     "phone": "+6281898765432",
     "role": "user",
-    "status": "pending",
+    "status": "approved",
     "agencyName": "ERA Star Menteng",
     "licenseNumber": "AREBI-104-JKT",
     "city": "Jakarta Pusat",
     "registeredAt": "2026-11-01",
-    "notes": "Mendaftar sebagai agen lapangan spesialis rumah hunian Menteng & Kebayoran."
+    "notes": "Mendaftar sebagai agen lapangan spesialis rumah hunian Menteng & Kebayoran.",
+    "reviewedAt": "2026-11-04",
+    "reviewedBy": "Ocha Syamsiah (Super Admin)"
   },
   {
     "id": "user-pending-2",
@@ -68,12 +86,14 @@
     "password": "password123",
     "phone": "+6281900112233",
     "role": "admin",
-    "status": "pending",
+    "status": "approved",
     "agencyName": "Ray White CBD Tower",
     "licenseNumber": "SIUP-PRO-889",
     "city": "Surabaya",
     "registeredAt": "2026-11-02",
-    "notes": "Permohonan akun Admin Kantor Cabang Surabaya untuk kelola 12 agen tim."
+    "notes": "Permohonan akun Admin Kantor Cabang Surabaya untuk kelola 12 agen tim.",
+    "reviewedAt": "2026-11-04",
+    "reviewedBy": "Ocha Syamsiah (Super Admin)"
   },
   {
     "id": "user-pending-3",
@@ -82,11 +102,13 @@
     "password": "password123",
     "phone": "+6281355443322",
     "role": "user",
-    "status": "pending",
+    "status": "approved",
     "agencyName": "Century 21 Prima Bali",
     "licenseNumber": "AREBI-215-DPS",
     "city": "Badung, Bali",
     "registeredAt": "2026-11-02",
-    "notes": "Mendaftar sebagai agen independen spesialis villa dan tanah Canggu & Seminyak."
+    "notes": "Mendaftar sebagai agen independen spesialis villa dan tanah Canggu & Seminyak.",
+    "reviewedAt": "2026-11-04",
+    "reviewedBy": "Ocha Syamsiah (Super Admin)"
   }
 ]

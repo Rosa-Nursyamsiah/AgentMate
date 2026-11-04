@@ -27,12 +27,13 @@ CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected');
 
 -- 2. USER PROFILES TABLE (Multi-Tier Role Hierarchy)
 CREATE TABLE IF NOT EXISTS public.user_profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
+  password TEXT DEFAULT 'password123' NOT NULL,
   phone TEXT NOT NULL,
-  role user_role DEFAULT 'user' NOT NULL,
-  status user_status DEFAULT 'pending' NOT NULL,
+  role TEXT DEFAULT 'user' NOT NULL,
+  status TEXT DEFAULT 'pending' NOT NULL,
   agency_name TEXT NOT NULL,
   license_number TEXT,
   city TEXT NOT NULL,
@@ -44,6 +45,36 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
+
+-- Row Level Security Policies
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read profiles" ON public.user_profiles;
+DROP POLICY IF EXISTS "Allow public insert profiles" ON public.user_profiles;
+DROP POLICY IF EXISTS "Allow public update profiles" ON public.user_profiles;
+
+CREATE POLICY "Allow public read profiles" ON public.user_profiles FOR SELECT USING (true);
+CREATE POLICY "Allow public insert profiles" ON public.user_profiles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update profiles" ON public.user_profiles FOR UPDATE USING (true);
+
+-- Initial Super Admin Seed (Ocha Syamsiah)
+INSERT INTO public.user_profiles (id, name, email, password, phone, role, status, agency_name, city, registered_at, reviewed_at, reviewed_by, notes)
+VALUES (
+  'user-superadmin',
+  'Ocha Syamsiah',
+  'ochasyamsiah16@gmail.com',
+  'password123',
+  '+6281299887766',
+  'super_admin',
+  'approved',
+  'AgenMate HQ (Principal Owner)',
+  'Jakarta',
+  NOW(),
+  NOW(),
+  'System Root',
+  'Pemilik Sistem & Super Admin Utama.'
+)
+ON CONFLICT (email) DO UPDATE SET role = 'super_admin', status = 'approved';
 
 -- 3. CLIENTS TABLE
 CREATE TABLE IF NOT EXISTS public.clients (

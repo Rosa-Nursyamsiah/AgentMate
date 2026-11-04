@@ -108,7 +108,65 @@ export async function registerUserRemote(userData: {
   const trimmedEmail = userData.email.trim();
   const isSuper = isSuperAdminEmail(trimmedEmail);
 
-  // 1. Send to Shared Server API
+  // 1. Try Supabase Cloud Database first if configured (Works on Vercel production 24/7)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: existing } = await supabase
+        .from('user_profiles')
+        .select('id, email')
+        .ilike('email', trimmedEmail);
+
+      if (existing && existing.length > 0) {
+        return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan gunakan tab Masuk / Login.' };
+      }
+
+      const newId = `user-${Date.now()}`;
+      const newUser: UserProfile = {
+        id: newId,
+        name: userData.name,
+        email: trimmedEmail,
+        password: userData.password,
+        phone: userData.phone,
+        role: isSuper ? 'super_admin' : (userData.role === 'super_admin' ? 'user' : userData.role),
+        status: isSuper ? 'approved' : 'pending',
+        agencyName: userData.agencyName,
+        city: userData.city,
+        licenseNumber: userData.licenseNumber || 'Dalam Proses Verifikasi AREBI',
+        registeredAt: new Date().toISOString().split('T')[0],
+        notes: isSuper
+          ? 'Akun Pemilik Sistem & Super Admin Utama.'
+          : `Pendaftaran baru via form online sebagai ${userData.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'}. Menunggu persetujuan Super Admin (Ocha Syamsiah).`,
+      };
+
+      const { error: insertErr } = await supabase.from('user_profiles').insert({
+        id: newId,
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        phone: newUser.phone,
+        role: newUser.role,
+        status: newUser.status,
+        agency_name: newUser.agencyName,
+        city: newUser.city,
+        license_number: newUser.licenseNumber,
+        registered_at: new Date().toISOString(),
+        notes: newUser.notes,
+      });
+
+      if (!insertErr) {
+        const current = loadLocalUsers();
+        const updated = [newUser, ...current.filter((u) => u.id !== newUser.id)];
+        saveLocalUsers(updated);
+        return { success: true, user: newUser };
+      } else {
+        console.warn('Supabase insert error, falling back:', insertErr);
+      }
+    } catch (err) {
+      console.warn('Supabase register error:', err);
+    }
+  }
+
+  // 2. Send to Shared Server API (Local dev server)
   try {
     const res = await fetch('/api/users/register', {
       method: 'POST',
@@ -122,28 +180,6 @@ export async function registerUserRemote(userData: {
         const current = loadLocalUsers();
         const updated = [json.user, ...current.filter((u) => u.id !== json.user.id)];
         saveLocalUsers(updated);
-
-        // Sync to Supabase in parallel if configured
-        if (isSupabaseConfigured && supabase) {
-          try {
-            await supabase.from('user_profiles').insert({
-              id: json.user.id,
-              name: json.user.name,
-              email: json.user.email,
-              phone: json.user.phone,
-              role: json.user.role,
-              status: json.user.status,
-              agency_name: json.user.agencyName,
-              city: json.user.city,
-              license_number: json.user.licenseNumber,
-              registered_at: new Date().toISOString(),
-              notes: json.user.notes,
-            });
-          } catch (e) {
-            console.error('Supabase async sync error:', e);
-          }
-        }
-
         return { success: true, user: json.user };
       }
       return { success: false, message: json.message || 'Pendaftaran gagal di server.' };
