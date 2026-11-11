@@ -24,20 +24,18 @@ CREATE TYPE property_status AS ENUM ('available', 'under_offer', 'sold', 'rented
 CREATE TYPE pipeline_stage AS ENUM ('new_lead', 'site_visit', 'negotiation', 'booking_fee', 'closed_won');
 CREATE TYPE user_role AS ENUM ('user', 'admin', 'super_admin');
 CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE company_status AS ENUM ('pending', 'active', 'rejected', 'suspended');
+CREATE TYPE membership_status AS ENUM ('pending', 'active', 'rejected', 'suspended', 'inactive');
 
--- 2. USER PROFILES TABLE (Multi-Tier Role Hierarchy)
-CREATE TABLE IF NOT EXISTS public.user_profiles (
-  id TEXT PRIMARY KEY,
+-- 2. COMPANIES TABLE (Perusahaan Properti)
+CREATE TABLE IF NOT EXISTS public.companies (
+  id TEXT PRIMARY KEY, -- Unique Generated ID e.g. CMP-WR001
   name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  password TEXT DEFAULT 'password123' NOT NULL,
-  phone TEXT NOT NULL,
-  role TEXT DEFAULT 'user' NOT NULL,
-  status TEXT DEFAULT 'pending' NOT NULL,
-  agency_name TEXT NOT NULL,
-  license_number TEXT,
-  city TEXT NOT NULL,
-  avatar_url TEXT,
+  address TEXT,
+  phone TEXT,
+  email TEXT,
+  status TEXT DEFAULT 'pending' NOT NULL, -- pending, active, rejected, suspended
+  registered_by TEXT,
   registered_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   reviewed_at TIMESTAMPTZ,
   reviewed_by TEXT,
@@ -45,6 +43,69 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
+
+-- 3. BRANCHES TABLE (Kantor Cabang Perusahaan)
+CREATE TABLE IF NOT EXISTS public.branches (
+  id TEXT PRIMARY KEY, -- Unique Generated ID e.g. BR-WR001-GRT
+  company_id TEXT REFERENCES public.companies(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  address TEXT,
+  city TEXT,
+  phone TEXT,
+  status TEXT DEFAULT 'active' NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- RLS for Companies & Branches
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.branches ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read companies" ON public.companies FOR SELECT USING (true);
+CREATE POLICY "Allow public insert companies" ON public.companies FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update companies" ON public.companies FOR UPDATE USING (true);
+
+CREATE POLICY "Allow public read branches" ON public.branches FOR SELECT USING (true);
+CREATE POLICY "Allow public insert branches" ON public.branches FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update branches" ON public.branches FOR UPDATE USING (true);
+
+-- 4. USER PROFILES TABLE (Multi-Tier Role & Dynamic Multi-Company Hierarchy)
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT DEFAULT 'password123' NOT NULL,
+  phone TEXT NOT NULL,
+  role TEXT DEFAULT 'user' NOT NULL, -- user (agen), admin (admin cabang), super_admin
+  status TEXT DEFAULT 'pending' NOT NULL, -- pending, approved, rejected
+  agency_name TEXT NOT NULL,
+  license_number TEXT,
+  city TEXT NOT NULL,
+  avatar_url TEXT,
+  -- Relasi Perusahaan & Cabang
+  company_id TEXT REFERENCES public.companies(id) ON DELETE SET NULL,
+  company_name TEXT,
+  branch_id TEXT REFERENCES public.branches(id) ON DELETE SET NULL,
+  branch_name TEXT,
+  position TEXT,
+  membership_status TEXT DEFAULT 'pending',
+  invite_code TEXT,
+  registered_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Migrasi aman untuk tabel user_profiles lama:
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS company_id TEXT;
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS company_name TEXT;
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS branch_id TEXT;
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS branch_name TEXT;
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS position TEXT;
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS membership_status TEXT DEFAULT 'pending';
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS invite_code TEXT;
 
 -- Row Level Security Policies
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;

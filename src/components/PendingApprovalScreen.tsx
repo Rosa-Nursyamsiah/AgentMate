@@ -41,13 +41,15 @@ export const PendingApprovalScreen: React.FC<PendingApprovalScreenProps> = memo(
 
             <div className="space-y-1">
               <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Pintu Gerbang Approval
+                Pintu Gerbang Verifikasi Akun
               </span>
               <h2 className="text-xl font-bold text-stone-900 tracking-tight">
                 Menunggu Persetujuan Akun
               </h2>
               <p className="text-xs text-stone-500 leading-relaxed max-w-xs mx-auto">
-                Permohonan pendaftaran Anda telah berhasil dicatat dan sedang dalam antrean verifikasi oleh Super Admin.
+                {currentUser.role === 'admin'
+                  ? 'Permohonan pendaftaran Admin Cabang Anda sedang dalam antrean verifikasi oleh Super Admin (Ocha Syamsiah).'
+                  : `Permohonan bergabung Anda sebagai Agen Properti sedang menunggu persetujuan dari Admin Cabang ${currentUser.companyName || currentUser.agencyName}.`}
               </p>
             </div>
           </div>
@@ -55,23 +57,47 @@ export const PendingApprovalScreen: React.FC<PendingApprovalScreenProps> = memo(
           {/* Registered Details Summary Card */}
           <div className="p-4 bg-[#FAF8F5] border border-stone-200 rounded-2xl space-y-2.5 text-xs">
             <div className="flex items-center justify-between pb-2 border-b border-stone-200/80">
-              <span className="text-stone-500">Status Permohonan:</span>
+              <span className="text-stone-500">Status Keanggotaan:</span>
               <span className="font-bold font-mono text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-full uppercase text-[10px] border border-amber-200 animate-pulse">
-                Pending Review
+                Pending Approval
               </span>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-stone-500">Nama Pemohon:</span>
                 <span className="font-bold text-stone-900">{currentUser.name}</span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-stone-500">Peran yang Dipilih:</span>
+                <span className="text-stone-500">Peran Akun:</span>
                 <span className="font-semibold text-stone-800 bg-stone-200/70 px-2 py-0.5 rounded text-[11px]">
-                  {currentUser.role === 'admin' ? 'Admin Kantor Cabang' : 'User / Agen Properti'}
+                  {currentUser.role === 'admin' ? 'Admin Kantor Cabang' : 'Agen Properti Lapangan'}
                 </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-stone-500">Perusahaan Properti:</span>
+                <div className="text-right">
+                  <span className="text-stone-900 font-semibold block">{currentUser.companyName || currentUser.agencyName}</span>
+                  {currentUser.companyId && (
+                    <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                      ID: {currentUser.companyId}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-stone-500">Kantor Cabang:</span>
+                <div className="text-right">
+                  <span className="text-stone-800 font-medium block">{currentUser.branchName || 'Cabang Utama'}</span>
+                  {currentUser.branchId && (
+                    <span className="text-[10px] font-mono text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                      ID: {currentUser.branchId}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-between items-center">
@@ -80,13 +106,10 @@ export const PendingApprovalScreen: React.FC<PendingApprovalScreenProps> = memo(
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-stone-500">Kantor Broker:</span>
-                <span className="text-stone-800 font-medium truncate max-w-[170px]">{currentUser.agencyName}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-stone-500">Kota Operasional:</span>
-                <span className="text-stone-800">{currentUser.city}</span>
+                <span className="text-stone-500">Pihak Peninjau (Reviewer):</span>
+                <span className="text-emerald-800 font-semibold text-[11px]">
+                  {currentUser.role === 'admin' ? 'Super Admin (Ocha Syamsiah)' : `Admin Cabang ${currentUser.branchName || ''}`}
+                </span>
               </div>
 
               <div className="flex justify-between items-center">

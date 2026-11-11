@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../types/crm';
 
-export type NavTab = 'dashboard' | 'contacts' | 'inventory' | 'pipeline' | 'visits' | 'database' | 'superadmin';
+export type NavTab = 'dashboard' | 'contacts' | 'inventory' | 'pipeline' | 'visits' | 'database' | 'superadmin' | 'branchadmin';
 
 interface BottomNavProps {
   activeTab: NavTab;
@@ -40,6 +40,16 @@ const BottomNavComponent: React.FC<BottomNavProps> = ({
         { id: 'database' as NavTab, label: 'Database', icon: Database },
       ];
     }
+    if (userRole === 'admin') {
+      return [
+        { id: 'branchadmin' as NavTab, label: 'Cabang', icon: Building2, badge: pendingApprovalsCount },
+        { id: 'dashboard' as NavTab, label: 'Beranda', icon: Home },
+        { id: 'contacts' as NavTab, label: 'Kontak', icon: Users },
+        { id: 'pipeline' as NavTab, label: 'Pipeline', icon: TrendingUp },
+        { id: 'inventory' as NavTab, label: 'Listing', icon: Building2 },
+        { id: 'visits' as NavTab, label: 'Survey', icon: CalendarCheck, badge: pendingRemindersCount },
+      ];
+    }
     return [
       { id: 'dashboard' as NavTab, label: 'Beranda', icon: Home },
       { id: 'contacts' as NavTab, label: 'Kontak', icon: Users },
@@ -48,7 +58,7 @@ const BottomNavComponent: React.FC<BottomNavProps> = ({
       { id: 'visits' as NavTab, label: 'Survey', icon: CalendarCheck, badge: pendingRemindersCount },
       { id: 'database' as NavTab, label: 'Database', icon: Database },
     ];
-  }, [isSuperAdmin, pendingRemindersCount, pendingApprovalsCount]);
+  }, [isSuperAdmin, userRole, pendingRemindersCount, pendingApprovalsCount]);
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-md">

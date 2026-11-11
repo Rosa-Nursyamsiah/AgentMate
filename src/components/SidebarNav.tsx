@@ -58,11 +58,23 @@ export const SidebarNav: React.FC<SidebarNavProps> = memo(({
       ? [
           {
             id: 'superadmin' as NavTab,
-            label: 'Approval Antrean',
-            sublabel: 'Persetujuan Akun Baru',
+            label: 'Approval Super Admin',
+            sublabel: 'Perusahaan & Akun Nasional',
             icon: ShieldCheck,
             badge: pendingApprovalsCount,
             badgeColor: 'bg-amber-500 text-white',
+            highlight: true,
+          },
+        ]
+      : currentUser.role === 'admin'
+      ? [
+          {
+            id: 'branchadmin' as NavTab,
+            label: 'Tim Kantor Cabang',
+            sublabel: 'Approval Agen Cabang',
+            icon: Building2,
+            badge: pendingApprovalsCount,
+            badgeColor: 'bg-teal-700 text-white',
             highlight: true,
           },
         ]
@@ -151,14 +163,21 @@ export const SidebarNav: React.FC<SidebarNavProps> = memo(({
                 )}
               </div>
               <p className="text-[10px] text-stone-500 truncate">
-                {currentUser.agencyName || 'Independen Broker'}
+                {currentUser.companyName || currentUser.agencyName || 'Independen Broker'}
               </p>
+              {currentUser.branchName && (
+                <p className="text-[9px] text-teal-800 font-mono truncate">
+                  {currentUser.branchName}
+                </p>
+              )}
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
           </div>
 
           <div className="mt-2 pt-2 border-t border-stone-200/60 flex items-center justify-between text-[10px]">
-            <span className="text-stone-400 font-mono">PERAN:</span>
+            <span className="text-stone-400 font-mono">
+              {currentUser.branchId ? currentUser.branchId : 'PERAN:'}
+            </span>
             <span className={`px-2 py-0.5 rounded-full font-bold uppercase font-mono ${
               isSuper
                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'

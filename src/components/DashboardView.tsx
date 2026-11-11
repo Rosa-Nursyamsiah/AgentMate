@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   Building2
 } from 'lucide-react';
-import { Client, Property, Deal, SiteVisit, FollowUpReminder } from '../types/crm';
+import { Client, Property, Deal, SiteVisit, FollowUpReminder, UserProfile } from '../types/crm';
 import { formatRupiahShort } from '../utils/formatters';
 
 interface DashboardViewProps {
@@ -26,8 +26,10 @@ interface DashboardViewProps {
   onOpenVisitModal: () => void;
   onOpenDealModal: () => void;
   onOpenWhatsApp: (client: Client, property?: Property) => void;
-  onSelectTab: (tab: 'dashboard' | 'contacts' | 'inventory' | 'pipeline' | 'visits' | 'database') => void;
+  onSelectTab: (tab: 'dashboard' | 'contacts' | 'inventory' | 'pipeline' | 'visits' | 'database' | 'superadmin' | 'branchadmin') => void;
   onToggleReminder: (reminderId: string) => void;
+  currentUser?: UserProfile | null;
+  pendingApprovalsCount?: number;
 }
 
 const DashboardViewComponent: React.FC<DashboardViewProps> = ({
@@ -43,6 +45,8 @@ const DashboardViewComponent: React.FC<DashboardViewProps> = ({
   onOpenWhatsApp,
   onSelectTab,
   onToggleReminder,
+  currentUser,
+  pendingApprovalsCount = 0,
 }) => {
   // Memoized client lookup map
   const clientsMap = useMemo(() => {
@@ -120,7 +124,7 @@ const DashboardViewComponent: React.FC<DashboardViewProps> = ({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <div>
               <p className="text-emerald-200 text-xs font-semibold tracking-wider uppercase font-mono">
-                Pusat Kendali Agen Properti
+                {currentUser?.companyName ? `${currentUser.companyName} • ${currentUser.branchName || 'Kantor Cabang'}` : 'Pusat Kendali Agen Properti'}
               </p>
               <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-white mt-0.5">
                 Ringkasan Eksekutif & Kinerja Hari Ini
@@ -164,6 +168,33 @@ const DashboardViewComponent: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* PENDING APPROVALS ALERT FOR ADMIN & SUPERADMIN */}
+      {Boolean((currentUser?.role === 'admin' || currentUser?.role === 'super_admin') && pendingApprovalsCount > 0) && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0 font-bold font-mono">
+              {pendingApprovalsCount}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-stone-900">
+                {currentUser?.role === 'super_admin' ? 'Verifikasi Entitas Baru Memerlukan Persetujuan' : 'Permohonan Agen Baru Menunggu Konfirmasi'}
+              </p>
+              <p className="text-xs text-stone-600">
+                {currentUser?.role === 'super_admin'
+                  ? `Ada ${pendingApprovalsCount} perusahaan/admin baru yang menunggu verifikasi Super Admin.`
+                  : `Ada ${pendingApprovalsCount} calon agen di cabang ${currentUser?.branchName || 'Anda'} yang menunggu persetujuan Admin Cabang.`}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onSelectTab(currentUser?.role === 'super_admin' ? 'superadmin' : 'branchadmin')}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shrink-0 transition-colors cursor-pointer shadow-xs text-center"
+          >
+            Tinjau Permohonan →
+          </button>
+        </div>
+      )}
 
       {/* ZERO-STATE ONBOARDING BANNER (Only shows when all counters are zero) */}
       {isZeroState && (

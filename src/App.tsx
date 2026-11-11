@@ -18,7 +18,9 @@ import {
   SiteVisit, 
   FollowUpReminder, 
   UserProfile, 
-  PipelineStage 
+  PipelineStage,
+  PropertyCompany,
+  CompanyBranch 
 } from './types/crm';
 import { Language } from './utils/translations';
 import { Header } from './components/Header';
@@ -39,6 +41,7 @@ const PipelineView = lazy(() => import('./components/PipelineView'));
 const VisitsView = lazy(() => import('./components/VisitsView'));
 const DatabaseSchemaView = lazy(() => import('./components/DatabaseSchemaView'));
 const SuperAdminView = lazy(() => import('./components/SuperAdminView'));
+const BranchAdminView = lazy(() => import('./components/BranchAdminView'));
 
 const ContactModal = lazy(() => import('./components/ContactModal'));
 const PropertyModal = lazy(() => import('./components/PropertyModal'));
@@ -53,8 +56,20 @@ import {
   approveUserRemote, 
   rejectUserRemote, 
   loadLocalUsers, 
-  saveLocalUsers 
+  saveLocalUsers,
+  approveAgentByBranchAdmin,
+  rejectAgentByBranchAdmin,
+  RegisterUserInput
 } from './services/userService';
+
+import {
+  loadLocalCompanies,
+  loadLocalBranches,
+  syncCompaniesFromServer,
+  syncBranchesFromServer,
+  approveCompanyBySuperAdmin,
+  rejectCompanyBySuperAdmin
+} from './services/companyService';
 
 const STORAGE_KEYS = {
   CLIENTS: 'agenmate_clients_v1',
@@ -98,6 +113,8 @@ export const App: React.FC = () => {
   });
 
   const [users, setUsers] = useState<UserProfile[]>(loadUsersFromStorage);
+  const [companies, setCompanies] = useState<PropertyCompany[]>(loadLocalCompanies);
+  const [branches, setBranches] = useState<CompanyBranch[]>(loadLocalBranches);
 
   // CRITICAL REQUIREMENT 1: The app must NOT bypass into the main workspace directly.
   // When first opened, it must always display the professional SaaS Landing Page.
@@ -199,22 +216,43 @@ export const App: React.FC = () => {
         setUsers(remoteUsers);
       }
     });
+    syncCompaniesFromServer().then((remoteCompanies) => {
+      if (remoteCompanies && remoteCompanies.length > 0) {
+        setCompanies(remoteCompanies);
+      }
+    });
+    syncBranchesFromServer().then((remoteBranches) => {
+      if (remoteBranches && remoteBranches.length > 0) {
+        setBranches(remoteBranches);
+      }
+    });
   }, []);
 
   // Real-time polling:
   // 1. When Super Admin is viewing: checks for new registrations across network/devices
-  // 2. When a pending user is waiting: automatically unlocks their workspace the moment Super Admin approves them!
+  // 2. When an Admin Cabang is viewing: checks for new agent join requests for their branch
+  // 3. When a pending user is waiting: automatically unlocks their workspace the moment they are approved!
   useEffect(() => {
-    if (!isSuperAdmin && currentUser?.status !== 'pending') return;
+    if (!isSuperAdmin && currentUser?.role !== 'admin' && currentUser?.status !== 'pending') return;
     const interval = setInterval(() => {
       syncUsersFromServer().then((remoteUsers) => {
         if (remoteUsers && remoteUsers.length > 0) {
           setUsers(remoteUsers);
         }
       });
+      syncCompaniesFromServer().then((remoteCompanies) => {
+        if (remoteCompanies && remoteCompanies.length > 0) {
+          setCompanies(remoteCompanies);
+        }
+      });
+      syncBranchesFromServer().then((remoteBranches) => {
+        if (remoteBranches && remoteBranches.length > 0) {
+          setBranches(remoteBranches);
+        }
+      });
     }, 3500);
     return () => clearInterval(interval);
-  }, [isSuperAdmin, currentUser?.status]);
+  }, [isSuperAdmin, currentUser?.role, currentUser?.status]);
 
   useEffect(() => {
     if (currentUserId) {
@@ -232,6 +270,9 @@ export const App: React.FC = () => {
   // Standard users and regular admins must NEVER see or access this Super Admin Dashboard
   useEffect(() => {
     if (currentUser && activeTab === 'superadmin' && !isSuperAdmin) {
+      setActiveTab('dashboard');
+    }
+    if (currentUser && activeTab === 'branchadmin' && currentUser.role !== 'admin' && !isSuperAdmin) {
       setActiveTab('dashboard');
     }
   }, [currentUser, activeTab, isSuperAdmin]);
@@ -314,16 +355,7 @@ export const App: React.FC = () => {
     return { success: true };
   }, []);
 
-  const handleRegister = useCallback(async (userData: {
-    name: string;
-    email: string;
-    password: string;
-    phone: string;
-    role: 'user' | 'admin' | 'super_admin';
-    agencyName: string;
-    city: string;
-    licenseNumber?: string;
-  }) => {
+  const handleRegister = useCallback(async (userData: RegisterUserInput) => {
     const res = await registerUserRemote(userData);
     if (!res.success) {
       return { success: false, message: res.message || 'Pendaftaran gagal.' };
@@ -332,12 +364,19 @@ export const App: React.FC = () => {
     const newUser = res.user!;
     const latestUsers = await syncUsersFromServer();
     setUsers(latestUsers);
+    const latestCompanies = await syncCompaniesFromServer();
+    setCompanies(latestCompanies);
+    const latestBranches = await syncBranchesFromServer();
+    setBranches(latestBranches);
+
     setCurrentUserId(newUser.id);
     sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
 
     const isSuper = isSuperAdminEmail(newUser.email);
     if (isSuper) {
       setActiveTab('superadmin');
+    } else if (newUser.role === 'admin') {
+      setActiveTab('branchadmin');
     } else {
       setActiveTab('dashboard');
     }
@@ -546,6 +585,38 @@ export const App: React.FC = () => {
     setUsers(latest);
   }, [currentUser]);
 
+  // Super Admin Company Approval Actions
+  const handleApproveCompany = useCallback(async (companyId: string, reviewedBy: string) => {
+    await approveCompanyBySuperAdmin(companyId, reviewedBy);
+    const latestCompanies = await syncCompaniesFromServer();
+    const latestBranches = await syncBranchesFromServer();
+    setCompanies(latestCompanies);
+    setBranches(latestBranches);
+  }, []);
+
+  const handleRejectCompany = useCallback(async (companyId: string, reviewedBy: string) => {
+    await rejectCompanyBySuperAdmin(companyId, reviewedBy);
+    const latestCompanies = await syncCompaniesFromServer();
+    const latestBranches = await syncBranchesFromServer();
+    setCompanies(latestCompanies);
+    setBranches(latestBranches);
+  }, []);
+
+  // Admin Cabang Agent Approval Actions
+  const handleApproveAgentByBranch = useCallback(async (agentId: string) => {
+    if (!currentUser) return;
+    await approveAgentByBranchAdmin(agentId, currentUser);
+    const latest = await syncUsersFromServer();
+    setUsers(latest);
+  }, [currentUser]);
+
+  const handleRejectAgentByBranch = useCallback(async (agentId: string, reason?: string) => {
+    if (!currentUser) return;
+    await rejectAgentByBranchAdmin(agentId, reason || 'Ditolak oleh Admin Cabang', currentUser);
+    const latest = await syncUsersFromServer();
+    setUsers(latest);
+  }, [currentUser]);
+
   // Reset to Zero State (0 data on first load)
   const handleResetZeroState = useCallback(() => {
     if (window.confirm('Reset semua data CRM ke Zero-State (0 Kontak, 0 Listing, 0 Deal)?')) {
@@ -637,7 +708,20 @@ export const App: React.FC = () => {
   }, []);
 
   const pendingRemindersCount = useMemo(() => reminders.filter((r) => !r.completed).length, [reminders]);
-  const pendingApprovalsCount = useMemo(() => users.filter((u) => u.status === 'pending').length, [users]);
+  const pendingApprovalsCount = useMemo(() => {
+    if (isSuperAdmin) {
+      return users.filter((u) => u.status === 'pending').length + companies.filter((c) => c.status === 'pending').length;
+    }
+    if (currentUser?.role === 'admin') {
+      return users.filter(
+        (u) =>
+          u.role === 'user' &&
+          u.status === 'pending' &&
+          (u.branchId === currentUser.branchId || u.branchName === currentUser.branchName || u.agencyName === currentUser.agencyName)
+      ).length;
+    }
+    return 0;
+  }, [users, companies, isSuperAdmin, currentUser]);
   const isZeroState = useMemo(() => clients.length === 0 && properties.length === 0 && deals.length === 0, [clients, properties, deals]);
 
   // =========================================================================
@@ -753,6 +837,8 @@ export const App: React.FC = () => {
               onOpenWhatsApp={handleOpenWhatsApp}
               onSelectTab={handleSelectTab}
               onToggleReminder={handleToggleReminder}
+              currentUser={currentUser}
+              pendingApprovalsCount={pendingApprovalsCount}
             />
           )}
 
@@ -823,13 +909,30 @@ export const App: React.FC = () => {
               />
             )}
 
+            {/* TAB: Branch Admin Team & Agent Approval Dashboard */}
+            {activeTab === 'branchadmin' && (currentUser.role === 'admin' || isSuperAdmin) && (
+              <BranchAdminView
+                currentUser={currentUser}
+                users={users}
+                onApproveAgent={handleApproveAgentByBranch}
+                onRejectAgent={handleRejectAgentByBranch}
+                onOpenWhatsApp={(phone, name) => {
+                  window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Halo%20${encodeURIComponent(name)},%20kami%20dari%20kantor%20cabang`, '_blank');
+                }}
+              />
+            )}
+
             {/* TAB 7: Super Admin Exclusive Approval Dashboard */}
             {activeTab === 'superadmin' && isSuperAdmin && (
               <SuperAdminView
                 users={users}
+                companies={companies}
+                branches={branches}
                 currentUserId={currentUser.id}
                 onApproveUser={handleApproveUser}
                 onRejectUser={handleRejectUser}
+                onApproveCompany={handleApproveCompany}
+                onRejectCompany={handleRejectCompany}
                 onRefreshUsers={handleRefreshUsers}
               />
             )}

@@ -53,7 +53,11 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
   },
   superadmin: {
     title: 'Pusat Approval Super Admin',
-    subtitle: 'Otoritas eksklusif Ocha Syamsiah untuk verifikasi agen dan admin cabang.',
+    subtitle: 'Otoritas eksklusif Ocha Syamsiah untuk verifikasi perusahaan, cabang, dan akun se-Indonesia.',
+  },
+  branchadmin: {
+    title: 'Manajemen Tim Kantor Cabang',
+    subtitle: 'Verifikasi permohonan keanggotaan agen baru dan kelola tim agen dalam cabang Anda.',
   },
 };
 

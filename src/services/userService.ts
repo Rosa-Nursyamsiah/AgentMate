@@ -1,6 +1,7 @@
 import { UserProfile } from '../types/crm';
 import { DEFAULT_USERS, SUPER_ADMIN_EMAIL, isSuperAdminEmail, normalizeEmail } from '../data/defaultData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { registerNewCompanyWithBranch, registerNewBranchForExistingCompany } from './companyService';
 
 const STORAGE_KEY = 'agenmate_users_v1';
 
@@ -58,7 +59,14 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
           phone: d.phone,
           role: d.role,
           status: d.status,
-          agencyName: d.agency_name || d.agencyName || 'Independen Broker',
+          companyId: d.company_id || d.companyId,
+          companyName: d.company_name || d.companyName || d.agency_name || d.agencyName || 'AgenMate Group',
+          branchId: d.branch_id || d.branchId,
+          branchName: d.branch_name || d.branchName || 'Kantor Cabang',
+          position: d.position || (d.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'),
+          membershipStatus: d.membership_status || (d.status === 'approved' ? 'active' : d.status),
+          inviteCode: d.invite_code || d.inviteCode,
+          agencyName: d.agency_name || d.agencyName || d.company_name || 'Independen Broker',
           city: d.city || 'Jakarta',
           licenseNumber: d.license_number || d.licenseNumber,
           registeredAt: d.registered_at ? d.registered_at.split('T')[0] : '2026-11-01',
@@ -70,11 +78,11 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
         return mapped;
       }
     } catch (err) {
-      console.warn('Supabase fetch failed, falling back to local server API:', err);
+      console.warn('Supabase fetch failed, falling back to local storage:', err);
     }
   }
 
-  // 2. Fetch from Shared Server API (/api/users) - works across all devices on the same network/server
+  // 2. Fetch from Shared Server API (/api/users)
   try {
     const res = await fetch('/api/users');
     if (res.ok) {
@@ -92,23 +100,110 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
   return loadLocalUsers();
 }
 
-/**
- * Registers a new user and pushes it directly to the shared backend / Supabase.
- */
-export async function registerUserRemote(userData: {
+export interface RegisterUserInput {
   name: string;
   email: string;
   password: string;
   phone: string;
   role: 'user' | 'admin' | 'super_admin';
-  agencyName: string;
-  city: string;
+  // Dynamic Multi-Company & Branch Fields
+  companyId?: string;
+  companyName?: string;
+  branchId?: string;
+  branchName?: string;
+  position?: string;
+  inviteCode?: string;
+
+  // New Company / Branch submission by Admin Cabang
+  isNewCompany?: boolean;
+  newCompanyName?: string;
+  newCompanyAddress?: string;
+  newBranchName?: string;
+  newBranchAddress?: string;
+
+  // Legacy/Compatibility fields
+  agencyName?: string;
+  city?: string;
   licenseNumber?: string;
-}): Promise<{ success: boolean; user?: UserProfile; message?: string }> {
+}
+
+/**
+ * Registers a new user with Company & Branch relationship and pushes it directly to Supabase/LocalStorage.
+ */
+export async function registerUserRemote(userData: RegisterUserInput): Promise<{ success: boolean; user?: UserProfile; message?: string }> {
   const trimmedEmail = userData.email.trim();
   const isSuper = isSuperAdminEmail(trimmedEmail);
 
-  // 1. Try Supabase Cloud Database first if configured (Works on Vercel production 24/7)
+  let finalCompanyId = userData.companyId;
+  let finalCompanyName = userData.companyName || userData.agencyName || 'Independen Broker';
+  let finalBranchId = userData.branchId;
+  let finalBranchName = userData.branchName || 'Kantor Cabang';
+  let finalCity = userData.city || 'Jakarta';
+
+  // 1. If Admin Cabang is registering a BRAND NEW company and branch:
+  if (userData.role === 'admin' && userData.isNewCompany && userData.newCompanyName && userData.newBranchName) {
+    const regRes = await registerNewCompanyWithBranch({
+      companyName: userData.newCompanyName,
+      companyAddress: userData.newCompanyAddress || 'Alamat Perusahaan',
+      companyCity: userData.city || 'Jakarta',
+      branchName: userData.newBranchName,
+      branchAddress: userData.newBranchAddress || 'Alamat Kantor Cabang',
+      registeredByAdminName: userData.name,
+      registeredByAdminEmail: trimmedEmail,
+    });
+    finalCompanyId = regRes.company.id;
+    finalCompanyName = regRes.company.name;
+    finalBranchId = regRes.branch.id;
+    finalBranchName = regRes.branch.name;
+    finalCity = regRes.company.city;
+  } 
+  // 2. If Admin Cabang is adding a new branch to an existing company:
+  else if (userData.role === 'admin' && userData.companyId && userData.newBranchName) {
+    const branchRes = await registerNewBranchForExistingCompany({
+      companyId: userData.companyId,
+      companyName: finalCompanyName,
+      branchName: userData.newBranchName,
+      branchAddress: userData.newBranchAddress || 'Alamat Kantor Cabang',
+      branchCity: finalCity,
+    });
+    finalBranchId = branchRes.id;
+    finalBranchName = branchRes.name;
+  }
+
+  const assignedRole = isSuper ? 'super_admin' : (userData.role === 'super_admin' ? 'user' : userData.role);
+  const assignedStatus = isSuper ? 'approved' : 'pending';
+  const assignedMembership = isSuper ? 'active' : 'pending';
+
+  const notesText = isSuper
+    ? 'Akun Pemilik Sistem & Super Admin Utama.'
+    : userData.role === 'admin'
+    ? `Pendaftaran Admin Cabang [${finalCompanyName} - ${finalBranchName}]. Menunggu persetujuan Super Admin (Ocha Syamsiah).`
+    : `Permohonan keanggotaan Agen Properti di [${finalCompanyName} - ${finalBranchName}]. Menunggu persetujuan Admin Cabang.`;
+
+  const newId = `user-${Date.now()}`;
+  const newUser: UserProfile = {
+    id: newId,
+    name: userData.name.trim(),
+    email: trimmedEmail,
+    password: userData.password,
+    phone: userData.phone.trim(),
+    role: assignedRole,
+    status: assignedStatus,
+    companyId: finalCompanyId,
+    companyName: finalCompanyName,
+    branchId: finalBranchId,
+    branchName: finalBranchName,
+    position: userData.position?.trim() || (userData.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'),
+    membershipStatus: assignedMembership,
+    inviteCode: userData.inviteCode?.trim(),
+    agencyName: `${finalCompanyName} (${finalBranchName})`,
+    city: finalCity,
+    licenseNumber: userData.licenseNumber?.trim() || 'Dalam Proses Verifikasi AREBI',
+    registeredAt: new Date().toISOString().split('T')[0],
+    notes: notesText,
+  };
+
+  // 1. Try Supabase Cloud Database first if configured
   if (isSupabaseConfigured && supabase) {
     try {
       const { data: existing } = await supabase
@@ -120,24 +215,6 @@ export async function registerUserRemote(userData: {
         return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan gunakan tab Masuk / Login.' };
       }
 
-      const newId = `user-${Date.now()}`;
-      const newUser: UserProfile = {
-        id: newId,
-        name: userData.name,
-        email: trimmedEmail,
-        password: userData.password,
-        phone: userData.phone,
-        role: isSuper ? 'super_admin' : (userData.role === 'super_admin' ? 'user' : userData.role),
-        status: isSuper ? 'approved' : 'pending',
-        agencyName: userData.agencyName,
-        city: userData.city,
-        licenseNumber: userData.licenseNumber || 'Dalam Proses Verifikasi AREBI',
-        registeredAt: new Date().toISOString().split('T')[0],
-        notes: isSuper
-          ? 'Akun Pemilik Sistem & Super Admin Utama.'
-          : `Pendaftaran baru via form online sebagai ${userData.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'}. Menunggu persetujuan Super Admin (Ocha Syamsiah).`,
-      };
-
       const { error: insertErr } = await supabase.from('user_profiles').insert({
         id: newId,
         name: newUser.name,
@@ -146,6 +223,13 @@ export async function registerUserRemote(userData: {
         phone: newUser.phone,
         role: newUser.role,
         status: newUser.status,
+        company_id: newUser.companyId,
+        company_name: newUser.companyName,
+        branch_id: newUser.branchId,
+        branch_name: newUser.branchName,
+        position: newUser.position,
+        membership_status: newUser.membershipStatus,
+        invite_code: newUser.inviteCode,
         agency_name: newUser.agencyName,
         city: newUser.city,
         license_number: newUser.licenseNumber,
@@ -166,29 +250,7 @@ export async function registerUserRemote(userData: {
     }
   }
 
-  // 2. Send to Shared Server API (Local dev server)
-  try {
-    const res = await fetch('/api/users/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && json.user) {
-        const current = loadLocalUsers();
-        const updated = [json.user, ...current.filter((u) => u.id !== json.user.id)];
-        saveLocalUsers(updated);
-        return { success: true, user: json.user };
-      }
-      return { success: false, message: json.message || 'Pendaftaran gagal di server.' };
-    }
-  } catch {
-    // Network error or offline
-  }
-
-  // 2. Offline / Local fallback
+  // 2. Local fallback
   const current = loadLocalUsers();
   const norm = normalizeEmail(trimmedEmail);
   const existing = current.find((u) => normalizeEmail(u.email) === norm);
@@ -196,43 +258,15 @@ export async function registerUserRemote(userData: {
     return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan gunakan tab Masuk / Login.' };
   }
 
-  const newUser: UserProfile = {
-    id: `user-${Date.now()}`,
-    name: userData.name,
-    email: trimmedEmail,
-    password: userData.password,
-    phone: userData.phone,
-    role: isSuper ? 'super_admin' : (userData.role === 'super_admin' ? 'user' : userData.role),
-    status: isSuper ? 'approved' : 'pending',
-    agencyName: userData.agencyName,
-    city: userData.city,
-    licenseNumber: userData.licenseNumber || 'Dalam Proses Verifikasi AREBI',
-    registeredAt: new Date().toISOString().split('T')[0],
-    notes: isSuper
-      ? 'Akun Pemilik Sistem & Super Admin Utama.'
-      : `Pendaftaran baru via form online sebagai ${userData.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'}. Menunggu persetujuan Super Admin (Ocha Syamsiah).`,
-  };
-
   const updated = [newUser, ...current];
   saveLocalUsers(updated);
   return { success: true, user: newUser };
 }
 
 /**
- * Super Admin approves a user remotely.
+ * Super Admin approves a user (Admin Cabang or Agent) remotely.
  */
 export async function approveUserRemote(userId: string, reviewedBy: string): Promise<boolean> {
-  // Update Shared Server API
-  try {
-    await fetch('/api/users/approve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, reviewedBy }),
-    });
-  } catch {
-    // ignore
-  }
-
   // Update Supabase if configured
   if (isSupabaseConfigured && supabase) {
     try {
@@ -240,6 +274,7 @@ export async function approveUserRemote(userId: string, reviewedBy: string): Pro
         .from('user_profiles')
         .update({
           status: 'approved',
+          membership_status: 'active',
           reviewed_at: new Date().toISOString(),
           reviewed_by: reviewedBy,
         })
@@ -256,6 +291,7 @@ export async function approveUserRemote(userId: string, reviewedBy: string): Pro
       ? {
           ...u,
           status: 'approved' as const,
+          membershipStatus: 'active' as const,
           reviewedAt: new Date().toISOString().split('T')[0],
           reviewedBy,
         }
@@ -266,29 +302,18 @@ export async function approveUserRemote(userId: string, reviewedBy: string): Pro
 }
 
 /**
- * Super Admin rejects a user remotely.
+ * Super Admin or Admin Cabang rejects a user.
  */
 export async function rejectUserRemote(userId: string, reason?: string, reviewedBy?: string): Promise<boolean> {
-  // Update Shared Server API
-  try {
-    await fetch('/api/users/reject', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, reason, reviewedBy }),
-    });
-  } catch {
-    // ignore
-  }
-
-  // Update Supabase if configured
   if (isSupabaseConfigured && supabase) {
     try {
       await supabase
         .from('user_profiles')
         .update({
           status: 'rejected',
+          membership_status: 'rejected',
           reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewedBy || 'Ocha Syamsiah (Super Admin)',
+          reviewed_by: reviewedBy || 'Admin Reviewer',
           notes: reason ? `Ditolak: ${reason}` : undefined,
         })
         .eq('id', userId);
@@ -297,15 +322,15 @@ export async function rejectUserRemote(userId: string, reason?: string, reviewed
     }
   }
 
-  // Update Local Storage
   const current = loadLocalUsers();
   const updated = current.map((u) =>
     u.id === userId
       ? {
           ...u,
           status: 'rejected' as const,
+          membershipStatus: 'rejected' as const,
           reviewedAt: new Date().toISOString().split('T')[0],
-          reviewedBy: reviewedBy || 'Ocha Syamsiah (Super Admin)',
+          reviewedBy: reviewedBy || 'Admin Reviewer',
           notes: reason ? `Ditolak: ${reason}` : u.notes,
         }
       : u
@@ -313,3 +338,20 @@ export async function rejectUserRemote(userId: string, reason?: string, reviewed
   saveLocalUsers(updated);
   return true;
 }
+
+/**
+ * Admin Cabang approves an Agent applicant for their specific branch.
+ */
+export async function approveAgentByBranchAdmin(agentId: string, branchAdmin: UserProfile): Promise<boolean> {
+  const reviewerNote = `${branchAdmin.name} (Admin Cabang ${branchAdmin.branchName || ''})`;
+  return approveUserRemote(agentId, reviewerNote);
+}
+
+/**
+ * Admin Cabang rejects an Agent applicant for their specific branch.
+ */
+export async function rejectAgentByBranchAdmin(agentId: string, reason: string, branchAdmin: UserProfile): Promise<boolean> {
+  const reviewerNote = `${branchAdmin.name} (Admin Cabang ${branchAdmin.branchName || ''})`;
+  return rejectUserRemote(agentId, reason, reviewerNote);
+}
+
