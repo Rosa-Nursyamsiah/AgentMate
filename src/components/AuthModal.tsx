@@ -22,7 +22,14 @@ import {
 } from 'lucide-react';
 import { PropertyCompany, CompanyBranch } from '../types/crm';
 import { RegisterUserInput } from '../services/userService';
-import { loadLocalCompanies, loadLocalBranches, syncCompaniesFromServer, syncBranchesFromServer } from '../services/companyService';
+import { 
+  loadLocalCompanies, 
+  loadLocalBranches, 
+  syncCompaniesFromServer, 
+  syncBranchesFromServer,
+  generateCompanyId,
+  generateBranchId
+} from '../services/companyService';
 import { SUPER_ADMIN_EMAIL, isSuperAdminEmail } from '../data/defaultData';
 
 interface AuthModalProps {
@@ -96,12 +103,14 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
   const [companySearchQuery, setCompanySearchQuery] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [customCompanyName, setCustomCompanyName] = useState('');
+  const [customBranchName, setCustomBranchName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
   // Filtered branches based on selected company
   const availableBranches = useMemo(() => {
-    if (!selectedCompanyId) return [];
-    return branches.filter((b) => b.companyId === selectedCompanyId && b.status === 'approved');
+    if (!selectedCompanyId || selectedCompanyId === 'custom_company') return [];
+    return branches.filter((b) => b.companyId === selectedCompanyId && (b.status === 'approved' || !b.status));
   }, [branches, selectedCompanyId]);
 
   // Filtered companies based on search input
@@ -209,11 +218,19 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
     } else if (role === 'user' && !isSuper) {
       // Agent requirements
       if (!selectedCompanyId) {
-        setErrorMessage('Sebagai Agen Properti, Anda wajib memilih Perusahaan Properti yang sudah terdaftar.');
+        setErrorMessage('Sebagai Agen Properti, silakan pilih Perusahaan Properti yang terdaftar atau pilih Ketik Manual.');
         return;
       }
-      if (!selectedBranchId) {
+      if (selectedCompanyId === 'custom_company' && !customCompanyName.trim()) {
+        setErrorMessage('Mohon masukkan Nama Perusahaan Properti Anda.');
+        return;
+      }
+      if (selectedCompanyId !== 'custom_company' && !selectedBranchId) {
         setErrorMessage('Silakan pilih Kantor Cabang tempat Anda bergabung.');
+        return;
+      }
+      if ((selectedBranchId === 'custom_branch' || selectedCompanyId === 'custom_company') && !customBranchName.trim()) {
+        setErrorMessage('Mohon masukkan Nama Kantor Cabang Anda.');
         return;
       }
     }
@@ -249,12 +266,24 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
           payload.agencyName = `${selectedCompanyObj?.name} (${newBranchName.trim()})`;
         }
       } else if (role === 'user' && !isSuper) {
-        payload.companyId = selectedCompanyId;
-        payload.companyName = selectedCompanyObj?.name || 'Perusahaan Properti';
-        payload.branchId = selectedBranchId;
-        payload.branchName = selectedBranchObj?.name || 'Kantor Cabang';
+        if (selectedCompanyId === 'custom_company') {
+          payload.companyName = customCompanyName.trim();
+          payload.companyId = generateCompanyId(customCompanyName.trim());
+        } else {
+          payload.companyId = selectedCompanyId;
+          payload.companyName = selectedCompanyObj?.name || 'Perusahaan Properti';
+        }
+
+        if (selectedBranchId === 'custom_branch' || selectedCompanyId === 'custom_company') {
+          payload.branchName = customBranchName.trim() || 'Kantor Cabang';
+          payload.branchId = generateBranchId(payload.companyId!, payload.branchName);
+        } else {
+          payload.branchId = selectedBranchId;
+          payload.branchName = selectedBranchObj?.name || 'Kantor Cabang';
+        }
+
         payload.inviteCode = inviteCode.trim() || undefined;
-        payload.agencyName = `${selectedCompanyObj?.name} (${selectedBranchObj?.name})`;
+        payload.agencyName = `${payload.companyName} (${payload.branchName})`;
       } else if (isSuper) {
         payload.companyId = 'CMP-001';
         payload.companyName = 'AgenMate HQ (Principal Owner)';
@@ -847,40 +876,101 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                           {c.name} [ID: {c.id}] · {c.city}
                         </option>
                       ))}
+                      <option value="custom_company">+ Perusahaan Belum Terdaftar (Ketik Manual)</option>
                     </select>
+
+                    {/* Custom Company Name Input if selected */}
+                    {selectedCompanyId === 'custom_company' && (
+                      <div className="mt-2.5 animate-fadeIn">
+                        <label className="block font-medium text-stone-700 mb-1">
+                          Nama Perusahaan Properti Anda *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={customCompanyName}
+                          onChange={(e) => setCustomCompanyName(e.target.value)}
+                          placeholder="Contoh: PT Graha Properti Indonesia / Era Jaya"
+                          className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 focus:ring-2 focus:ring-emerald-600/20 text-xs font-medium"
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Informative Guidance if Company Not Listed */}
-                  <div className="p-2.5 bg-white border border-emerald-200/70 rounded-xl text-[11px] text-stone-600 space-y-1">
+                  {/* Informative Guidance & Quick Admin Switch */}
+                  <div className="p-2.5 bg-white border border-emerald-200/70 rounded-xl text-[11px] text-stone-600 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-semibold text-emerald-900">
                       <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                      <span>Perusahaan Anda belum terdaftar di daftar di atas?</span>
+                      <span>Kantor atau Perusahaan Anda belum ada di daftar pilihan?</span>
                     </div>
                     <p className="text-[10.5px] leading-relaxed text-stone-500 pl-5">
-                      Agen Properti tidak membuat perusahaan baru. Silakan hubungi <strong>Pimpinan Kantor</strong> atau <strong>Admin Cabang</strong> Anda untuk mendaftarkan perusahaan di AgenMate terlebih dahulu.
+                      Anda dapat memilih opsi <strong>"Ketik Manual"</strong> di atas, atau jika Anda berwenang mengelola cabang baru, daftarkan kantor Anda secara resmi sebagai <strong>Admin Cabang</strong>:
                     </p>
+                    <div className="pt-0.5 pl-5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRole('admin');
+                          setAdminCompanyMode('new');
+                        }}
+                        className="inline-flex items-center gap-1.5 text-emerald-800 hover:text-emerald-950 font-bold bg-emerald-100/70 hover:bg-emerald-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer text-[11px]"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Beralih: Daftarkan Perusahaan & Cabang Baru (Admin Cabang) →</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Dynamic Branch Selection */}
-                  {selectedCompanyId && (
+                  {Boolean(selectedCompanyId) && (
                     <div className="animate-fadeIn space-y-2">
                       <div>
                         <label className="block font-medium text-stone-700 mb-1">
                           Pilih Kantor Cabang Anda *
                         </label>
-                        <select
-                          required
-                          value={selectedBranchId}
-                          onChange={(e) => setSelectedBranchId(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 text-xs font-medium"
-                        >
-                          <option value="">-- Pilih Kantor Cabang --</option>
-                          {availableBranches.map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name} [ID: {b.id}] - {b.city}
-                            </option>
-                          ))}
-                        </select>
+                        {selectedCompanyId === 'custom_company' ? (
+                          <input
+                            type="text"
+                            required
+                            value={customBranchName}
+                            onChange={(e) => setCustomBranchName(e.target.value)}
+                            placeholder="Contoh: Cabang Pusat / Cabang Garut"
+                            className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-600/20 text-xs font-medium"
+                          />
+                        ) : (
+                          <>
+                            <select
+                              required
+                              value={selectedBranchId}
+                              onChange={(e) => setSelectedBranchId(e.target.value)}
+                              className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 text-xs font-medium"
+                            >
+                              <option value="">-- Pilih Kantor Cabang --</option>
+                              {availableBranches.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.name} [ID: {b.id}] - {b.city}
+                                </option>
+                              ))}
+                              <option value="custom_branch">+ Kantor Cabang Lainnya (Ketik Manual)</option>
+                            </select>
+
+                            {selectedBranchId === 'custom_branch' && (
+                              <div className="mt-2 animate-fadeIn">
+                                <label className="block font-medium text-stone-700 mb-1">
+                                  Nama Kantor Cabang Anda *
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={customBranchName}
+                                  onChange={(e) => setCustomBranchName(e.target.value)}
+                                  placeholder="Contoh: Cabang Baru / Area Operasional"
+                                  className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 focus:ring-2 focus:ring-emerald-600/20 text-xs font-medium"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

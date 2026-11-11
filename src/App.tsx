@@ -362,15 +362,22 @@ export const App: React.FC = () => {
     }
 
     const newUser = res.user!;
-    const latestUsers = await syncUsersFromServer();
-    setUsers(latestUsers);
-    const latestCompanies = await syncCompaniesFromServer();
-    setCompanies(latestCompanies);
-    const latestBranches = await syncBranchesFromServer();
-    setBranches(latestBranches);
-
+    // 1. Immediately activate session and inject new user into React state
+    // This ensures PendingApprovalScreen renders immediately without waiting for server sync
     setCurrentUserId(newUser.id);
     sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+    setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id)]);
+
+    // 2. Background sync with remote Supabase
+    syncUsersFromServer().then((latestUsers) => {
+      if (latestUsers && latestUsers.length > 0) setUsers(latestUsers);
+    });
+    syncCompaniesFromServer().then((latestCompanies) => {
+      if (latestCompanies && latestCompanies.length > 0) setCompanies(latestCompanies);
+    });
+    syncBranchesFromServer().then((latestBranches) => {
+      if (latestBranches && latestBranches.length > 0) setBranches(latestBranches);
+    });
 
     const isSuper = isSuperAdminEmail(newUser.email);
     if (isSuper) {

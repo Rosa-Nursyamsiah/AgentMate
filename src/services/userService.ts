@@ -51,31 +51,54 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
         .order('registered_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
-        const mapped: UserProfile[] = data.map((d: any) => ({
-          id: d.id,
-          name: d.name,
-          email: d.email,
-          password: d.password || 'password123',
-          phone: d.phone,
-          role: d.role,
-          status: d.status,
-          companyId: d.company_id || d.companyId,
-          companyName: d.company_name || d.companyName || d.agency_name || d.agencyName || 'AgenMate Group',
-          branchId: d.branch_id || d.branchId,
-          branchName: d.branch_name || d.branchName || 'Kantor Cabang',
-          position: d.position || (d.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'),
-          membershipStatus: d.membership_status || (d.status === 'approved' ? 'active' : d.status),
-          inviteCode: d.invite_code || d.inviteCode,
-          agencyName: d.agency_name || d.agencyName || d.company_name || 'Independen Broker',
-          city: d.city || 'Jakarta',
-          licenseNumber: d.license_number || d.licenseNumber,
-          registeredAt: d.registered_at ? d.registered_at.split('T')[0] : '2026-11-01',
-          reviewedAt: d.reviewed_at ? d.reviewed_at.split('T')[0] : undefined,
-          reviewedBy: d.reviewed_by || d.reviewedBy,
-          notes: d.notes,
-        }));
-        saveLocalUsers(mapped);
-        return mapped;
+        const mapped: UserProfile[] = data.map((d: any) => {
+          let extra: any = {};
+          if (d.notes && typeof d.notes === 'string' && d.notes.trim().startsWith('{')) {
+            try {
+              extra = JSON.parse(d.notes);
+            } catch {
+              // ignore json parse error
+            }
+          }
+          return {
+            id: d.id,
+            name: d.name,
+            email: d.email,
+            password: d.password || 'password123',
+            phone: d.phone,
+            role: d.role,
+            status: d.status,
+            companyId: d.company_id || d.companyId || extra.companyId,
+            companyName: d.company_name || d.companyName || extra.companyName || d.agency_name || d.agencyName || 'AgenMate Group',
+            branchId: d.branch_id || d.branchId || extra.branchId,
+            branchName: d.branch_name || d.branchName || extra.branchName || 'Kantor Cabang',
+            position: d.position || extra.position || (d.role === 'admin' ? 'Admin Cabang' : 'Agen Properti'),
+            membershipStatus: d.membership_status || extra.membershipStatus || (d.status === 'approved' ? 'active' : d.status),
+            inviteCode: d.invite_code || d.inviteCode || extra.inviteCode,
+            agencyName: d.agency_name || d.agencyName || d.company_name || 'Independen Broker',
+            city: d.city || 'Jakarta',
+            licenseNumber: d.license_number || d.licenseNumber,
+            registeredAt: d.registered_at ? d.registered_at.split('T')[0] : '2026-11-01',
+            reviewedAt: d.reviewed_at ? d.reviewed_at.split('T')[0] : undefined,
+            reviewedBy: d.reviewed_by || d.reviewedBy,
+            notes: extra.originalNotes || d.notes,
+          };
+        });
+
+        // Smart merge: Remote users combined with local users so any locally registered user is NEVER dropped!
+        const localUsers = loadLocalUsers();
+        const mergedMap = new Map<string, UserProfile>();
+        for (const u of localUsers) {
+          mergedMap.set(u.id, u);
+          mergedMap.set(normalizeEmail(u.email), u);
+        }
+        for (const r of mapped) {
+          mergedMap.set(r.id, r);
+          mergedMap.set(normalizeEmail(r.email), r);
+        }
+        const finalUsers = Array.from(new Set(mergedMap.values()));
+        saveLocalUsers(finalUsers);
+        return finalUsers;
       }
     } catch (err) {
       console.warn('Supabase fetch failed, falling back to local storage:', err);
@@ -215,6 +238,9 @@ export async function registerUserRemote(userData: RegisterUserInput): Promise<{
         return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan gunakan tab Masuk / Login.' };
       }
 
+      let insertSuccess = false;
+
+      // Attempt 1: Full schema insert with dynamic multi-company columns
       const { error: insertErr } = await supabase.from('user_profiles').insert({
         id: newId,
         name: newUser.name,
@@ -238,12 +264,48 @@ export async function registerUserRemote(userData: RegisterUserInput): Promise<{
       });
 
       if (!insertErr) {
+        insertSuccess = true;
+      } else {
+        console.warn('Supabase full schema insert failed (columns may be pending in SQL editor), attempting base schema fallback:', insertErr);
+        // Attempt 2: Fallback insert with base columns guaranteed to exist on initial schema
+        const notesWithMetadata = JSON.stringify({
+          companyId: newUser.companyId,
+          companyName: newUser.companyName,
+          branchId: newUser.branchId,
+          branchName: newUser.branchName,
+          position: newUser.position,
+          membershipStatus: newUser.membershipStatus,
+          inviteCode: newUser.inviteCode,
+          originalNotes: newUser.notes,
+        });
+
+        const { error: fallbackErr } = await supabase.from('user_profiles').insert({
+          id: newId,
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password,
+          phone: newUser.phone,
+          role: newUser.role,
+          status: newUser.status,
+          agency_name: newUser.agencyName,
+          city: newUser.city,
+          license_number: newUser.licenseNumber,
+          registered_at: new Date().toISOString(),
+          notes: notesWithMetadata,
+        });
+
+        if (!fallbackErr) {
+          insertSuccess = true;
+        } else {
+          console.warn('Supabase base insert fallback error:', fallbackErr);
+        }
+      }
+
+      if (insertSuccess) {
         const current = loadLocalUsers();
         const updated = [newUser, ...current.filter((u) => u.id !== newUser.id)];
         saveLocalUsers(updated);
         return { success: true, user: newUser };
-      } else {
-        console.warn('Supabase insert error, falling back:', insertErr);
       }
     } catch (err) {
       console.warn('Supabase register error:', err);
@@ -258,7 +320,7 @@ export async function registerUserRemote(userData: RegisterUserInput): Promise<{
     return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan gunakan tab Masuk / Login.' };
   }
 
-  const updated = [newUser, ...current];
+  const updated = [newUser, ...current.filter((u) => u.id !== newUser.id)];
   saveLocalUsers(updated);
   return { success: true, user: newUser };
 }
