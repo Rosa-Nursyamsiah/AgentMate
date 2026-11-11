@@ -51,7 +51,7 @@ const BottomNavComponent: React.FC<BottomNavProps> = ({
   }, [isSuperAdmin, pendingRemindersCount, pendingApprovalsCount]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-md">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-md">
       <div className="max-w-md mx-auto grid grid-cols-6 items-center h-16 px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;

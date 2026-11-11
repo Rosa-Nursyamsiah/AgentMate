@@ -143,9 +143,9 @@ const VisitsViewComponent: React.FC<VisitsViewProps> = ({
 
       {/* VISITS TAB */}
       {subTab === 'visits' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {visits.length === 0 ? (
-            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl">
+            <div className="col-span-full p-8 text-center bg-white border border-slate-200 rounded-2xl">
               <p className="text-xs text-slate-500">Belum ada catatan survey lokasi.</p>
             </div>
           ) : (
@@ -403,64 +403,66 @@ const VisitsViewComponent: React.FC<VisitsViewProps> = ({
                 Semua tugas follow-up telah selesai! Kerja bagus menjaga hubungan klien.
               </div>
             ) : (
-              pendingReminders.map((reminder) => {
-                const client = clientsMap.get(reminder.clientId);
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {pendingReminders.map((reminder) => {
+                  const client = clientsMap.get(reminder.clientId);
 
-                return (
-                  <div
-                    key={reminder.id}
-                    className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex items-start justify-between gap-3"
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <button
-                        onClick={() => onToggleReminder(reminder.id)}
-                        className="mt-0.5 text-slate-300 hover:text-emerald-600 transition-colors shrink-0"
-                      >
-                        <Circle className="w-5 h-5" />
-                      </button>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 text-xs">
-                            {reminder.clientName}
-                          </span>
-                          <span className="text-[10px] text-slate-400">·</span>
-                          <span
-                            className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
-                              reminder.priority === 'high'
-                                ? 'bg-rose-50 text-rose-700'
-                                : 'bg-amber-50 text-amber-700'
-                            }`}
-                          >
-                            Batas: {reminder.dueDate}
-                          </span>
+                  return (
+                    <div
+                      key={reminder.id}
+                      className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex items-start justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <button
+                          onClick={() => onToggleReminder(reminder.id)}
+                          className="mt-0.5 text-slate-300 hover:text-emerald-600 transition-colors shrink-0"
+                        >
+                          <Circle className="w-5 h-5" />
+                        </button>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-xs">
+                              {reminder.clientName}
+                            </span>
+                            <span className="text-[10px] text-slate-400">·</span>
+                            <span
+                              className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
+                                reminder.priority === 'high'
+                                  ? 'bg-rose-50 text-rose-700'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}
+                            >
+                              Batas: {reminder.dueDate}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-700 mt-1 leading-snug">
+                            {reminder.note}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-700 mt-1 leading-snug">
-                          {reminder.note}
-                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0 self-center">
+                        {client && (
+                          <button
+                            onClick={() => onOpenWhatsApp(client)}
+                            className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors"
+                            title="WhatsApp"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </button>
+                        )}
+                        <a
+                          href={`tel:${reminder.clientPhone}`}
+                          className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                          title="Telepon"
+                        >
+                          <Phone className="w-4 h-4" />
+                        </a>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 self-center">
-                      {client && (
-                        <button
-                          onClick={() => onOpenWhatsApp(client)}
-                          className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors"
-                          title="WhatsApp"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
-                      )}
-                      <a
-                        href={`tel:${reminder.clientPhone}`}
-                        className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors"
-                        title="Telepon"
-                      >
-                        <Phone className="w-4 h-4" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
 

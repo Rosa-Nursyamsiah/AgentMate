@@ -23,6 +23,8 @@ import {
 import { Language } from './utils/translations';
 import { Header } from './components/Header';
 import { BottomNav, NavTab } from './components/BottomNav';
+import { SidebarNav } from './components/SidebarNav';
+import { DesktopTopBar } from './components/DesktopTopBar';
 import { DashboardView } from './components/DashboardView';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
@@ -688,9 +690,11 @@ export const App: React.FC = () => {
 
   // 4. If user status is APPROVED, grant full access to the operational workspace!
   return (
-    <div className="min-h-screen bg-[#FDFBF7] flex flex-col antialiased selection:bg-emerald-100 selection:text-emerald-900 font-sans">
-      {/* Top Mobile Bar */}
-      <Header
+    <div className="min-h-screen bg-[#FDFBF7] flex antialiased selection:bg-emerald-100 selection:text-emerald-900 font-sans">
+      {/* Desktop Persistent Left Sidebar (Hidden on Mobile, Visible on Laptop/Desktop >= 1024px) */}
+      <SidebarNav
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
         currentUser={currentUser}
         language={language}
         onOpenSettings={handleOpenSettings}
@@ -699,117 +703,149 @@ export const App: React.FC = () => {
         onResetZeroState={handleResetZeroState}
         isZeroState={isZeroState}
         onLogout={handleLogout}
-      />
-
-      {/* Main Container tailored for mobile view */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 pt-4">
-        {/* TAB 1: Beranda / Dashboard (Eagerly loaded for instant mobile viewport paint) */}
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            clients={clients}
-            properties={properties}
-            deals={deals}
-            visits={visits}
-            reminders={reminders}
-            onOpenContactModal={handleOpenAddContact}
-            onOpenPropertyModal={handleOpenAddProperty}
-            onOpenVisitModal={handleOpenAddVisit}
-            onOpenDealModal={handleOpenAddDeal}
-            onOpenWhatsApp={handleOpenWhatsApp}
-            onSelectTab={handleSelectTab}
-            onToggleReminder={handleToggleReminder}
-          />
-        )}
-
-        {/* Code-split heavier views with lightweight skeleton fallback */}
-        <Suspense fallback={<ViewSkeleton />}>
-          {/* TAB 2: Contacts / Klien */}
-          {activeTab === 'contacts' && (
-            <ContactsView
-              clients={clients}
-              properties={properties}
-              onOpenAddModal={handleOpenAddContact}
-              onOpenEditModal={handleOpenEditContact}
-              onDeleteClient={handleDeleteClient}
-              onOpenWhatsApp={handleOpenWhatsApp}
-            />
-          )}
-
-          {/* TAB 3: Inventory / Listing */}
-          {activeTab === 'inventory' && (
-            <InventoryView
-              properties={properties}
-              clients={clients}
-              onOpenAddModal={handleOpenAddProperty}
-              onOpenEditModal={handleOpenEditProperty}
-              onDeleteProperty={handleDeleteProperty}
-              onOpenWhatsApp={handleOpenWhatsApp}
-            />
-          )}
-
-          {/* TAB 4: Sales Pipeline / Kanban */}
-          {activeTab === 'pipeline' && (
-            <PipelineView
-              deals={deals}
-              clients={clients}
-              properties={properties}
-              onOpenAddModal={handleOpenAddDeal}
-              onOpenEditModal={handleOpenEditDeal}
-              onDeleteDeal={handleDeleteDeal}
-              onMoveStage={handleMoveStage}
-              onOpenWhatsApp={handleOpenWhatsApp}
-            />
-          )}
-
-          {/* TAB 5: Survey & Visits */}
-          {activeTab === 'visits' && (
-            <VisitsView
-              visits={visits}
-              reminders={reminders}
-              clients={clients}
-              properties={properties}
-              onOpenAddVisitModal={handleOpenAddVisit}
-              onOpenEditVisitModal={handleOpenEditVisit}
-              onDeleteVisit={handleDeleteVisit}
-              onToggleReminder={handleToggleReminder}
-              onAddReminder={handleAddReminder}
-              onOpenWhatsApp={handleOpenWhatsApp}
-            />
-          )}
-
-          {/* TAB 6: Database & Supabase */}
-          {activeTab === 'database' && (
-            <DatabaseSchemaView
-              clients={clients}
-              properties={properties}
-              deals={deals}
-              visits={visits}
-              reminders={reminders}
-            />
-          )}
-
-          {/* TAB 7: Super Admin Exclusive Approval Dashboard */}
-          {activeTab === 'superadmin' && isSuperAdmin && (
-            <SuperAdminView
-              users={users}
-              currentUserId={currentUser.id}
-              onApproveUser={handleApproveUser}
-              onRejectUser={handleRejectUser}
-              onRefreshUsers={handleRefreshUsers}
-            />
-          )}
-        </Suspense>
-      </main>
-
-      {/* Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onSelectTab={handleSelectTab}
         pendingRemindersCount={pendingRemindersCount}
-        userRole={currentUser.role}
-        isSuperAdmin={isSuperAdmin}
         pendingApprovalsCount={pendingApprovalsCount}
+        isSuperAdmin={isSuperAdmin}
       />
+
+      {/* Main Workspace Column (Full width on Mobile, flex-1 next to Sidebar on Laptop) */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Top Header (Visible on Mobile, Hidden on Laptop/Desktop) */}
+        <div className="lg:hidden">
+          <Header
+            currentUser={currentUser}
+            language={language}
+            onOpenSettings={handleOpenSettings}
+            onToggleLanguage={handleToggleLanguage}
+            onLoadDemoData={handleLoadSampleData}
+            onResetZeroState={handleResetZeroState}
+            isZeroState={isZeroState}
+            onLogout={handleLogout}
+          />
+        </div>
+
+        {/* Laptop/Desktop Top Navigation Bar (Hidden on Mobile) */}
+        <DesktopTopBar
+          activeTab={activeTab}
+          currentUser={currentUser}
+          onOpenAddContact={handleOpenAddContact}
+          onOpenAddProperty={handleOpenAddProperty}
+          onOpenAddDeal={handleOpenAddDeal}
+          onOpenAddVisit={handleOpenAddVisit}
+          onOpenSettings={handleOpenSettings}
+          isSuperAdmin={isSuperAdmin}
+        />
+
+        {/* Responsive Content Container */}
+        <main className="flex-1 w-full max-w-md mx-auto px-4 pt-4 pb-24 lg:max-w-7xl lg:mx-0 lg:px-8 lg:pt-6 lg:pb-12">
+          {/* TAB 1: Beranda / Dashboard (Eagerly loaded for instant mobile viewport paint) */}
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              clients={clients}
+              properties={properties}
+              deals={deals}
+              visits={visits}
+              reminders={reminders}
+              onOpenContactModal={handleOpenAddContact}
+              onOpenPropertyModal={handleOpenAddProperty}
+              onOpenVisitModal={handleOpenAddVisit}
+              onOpenDealModal={handleOpenAddDeal}
+              onOpenWhatsApp={handleOpenWhatsApp}
+              onSelectTab={handleSelectTab}
+              onToggleReminder={handleToggleReminder}
+            />
+          )}
+
+          {/* Code-split heavier views with lightweight skeleton fallback */}
+          <Suspense fallback={<ViewSkeleton />}>
+            {/* TAB 2: Contacts / Klien */}
+            {activeTab === 'contacts' && (
+              <ContactsView
+                clients={clients}
+                properties={properties}
+                onOpenAddModal={handleOpenAddContact}
+                onOpenEditModal={handleOpenEditContact}
+                onDeleteClient={handleDeleteClient}
+                onOpenWhatsApp={handleOpenWhatsApp}
+              />
+            )}
+
+            {/* TAB 3: Inventory / Listing */}
+            {activeTab === 'inventory' && (
+              <InventoryView
+                properties={properties}
+                clients={clients}
+                onOpenAddModal={handleOpenAddProperty}
+                onOpenEditModal={handleOpenEditProperty}
+                onDeleteProperty={handleDeleteProperty}
+                onOpenWhatsApp={handleOpenWhatsApp}
+              />
+            )}
+
+            {/* TAB 4: Sales Pipeline / Kanban */}
+            {activeTab === 'pipeline' && (
+              <PipelineView
+                deals={deals}
+                clients={clients}
+                properties={properties}
+                onOpenAddModal={handleOpenAddDeal}
+                onOpenEditModal={handleOpenEditDeal}
+                onDeleteDeal={handleDeleteDeal}
+                onMoveStage={handleMoveStage}
+                onOpenWhatsApp={handleOpenWhatsApp}
+              />
+            )}
+
+            {/* TAB 5: Survey & Visits */}
+            {activeTab === 'visits' && (
+              <VisitsView
+                visits={visits}
+                reminders={reminders}
+                clients={clients}
+                properties={properties}
+                onOpenAddVisitModal={handleOpenAddVisit}
+                onOpenEditVisitModal={handleOpenEditVisit}
+                onDeleteVisit={handleDeleteVisit}
+                onToggleReminder={handleToggleReminder}
+                onAddReminder={handleAddReminder}
+                onOpenWhatsApp={handleOpenWhatsApp}
+              />
+            )}
+
+            {/* TAB 6: Database & Supabase */}
+            {activeTab === 'database' && (
+              <DatabaseSchemaView
+                clients={clients}
+                properties={properties}
+                deals={deals}
+                visits={visits}
+                reminders={reminders}
+              />
+            )}
+
+            {/* TAB 7: Super Admin Exclusive Approval Dashboard */}
+            {activeTab === 'superadmin' && isSuperAdmin && (
+              <SuperAdminView
+                users={users}
+                currentUserId={currentUser.id}
+                onApproveUser={handleApproveUser}
+                onRejectUser={handleRejectUser}
+                onRefreshUsers={handleRefreshUsers}
+              />
+            )}
+          </Suspense>
+        </main>
+
+        {/* Bottom Navigation (Hidden on Laptop via lg:hidden inside component) */}
+        <BottomNav
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          pendingRemindersCount={pendingRemindersCount}
+          userRole={currentUser.role}
+          isSuperAdmin={isSuperAdmin}
+          pendingApprovalsCount={pendingApprovalsCount}
+        />
+      </div>
 
       {/* MODALS - Code split & rendered conditionally with lightweight skeleton fallback */}
       {/* 1. Contact Modal */}

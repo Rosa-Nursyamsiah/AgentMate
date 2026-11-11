@@ -201,9 +201,9 @@ const ContactsViewComponent: React.FC<ContactsViewProps> = ({
       </div>
 
       {/* Client List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredClients.length === 0 ? (
-          <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl">
+          <div className="col-span-full p-8 text-center bg-white border border-slate-200 rounded-2xl">
             <p className="text-xs text-slate-500">Tidak ada kontak yang cocok dengan pencarian.</p>
           </div>
         ) : (
@@ -212,7 +212,7 @@ const ContactsViewComponent: React.FC<ContactsViewProps> = ({
             return (
               <div
                 key={client.id}
-                className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs hover:shadow-xs transition-shadow space-y-3"
+                className="p-4 bg-white border border-stone-200/90 rounded-2xl shadow-2xs hover:shadow-xs hover:border-emerald-300 transition-all space-y-3 flex flex-col justify-between"
               >
                 {/* Client Header Info */}
                 <div className="flex items-start justify-between gap-2">

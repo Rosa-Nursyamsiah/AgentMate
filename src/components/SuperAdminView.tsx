@@ -208,9 +208,9 @@ const SuperAdminViewComponent: React.FC<SuperAdminViewProps> = ({
       </div>
 
       {/* Users List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredUsers.length === 0 ? (
-          <div className="p-8 text-center bg-white border border-stone-200 rounded-2xl">
+          <div className="col-span-full p-8 text-center bg-white border border-stone-200 rounded-2xl">
             <Clock className="w-8 h-8 text-stone-300 mx-auto mb-2" />
             <p className="text-xs text-stone-500">Tidak ada permohonan akun di kategori ini.</p>
           </div>

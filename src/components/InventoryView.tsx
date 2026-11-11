@@ -212,9 +212,9 @@ Berminat survey unit fisik atau simulasi perhitungan KPR? Hubungi saya untuk jad
       </div>
 
       {/* Property Cards */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredProperties.length === 0 ? (
-          <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl">
+          <div className="col-span-full p-8 text-center bg-white border border-slate-200 rounded-2xl">
             <p className="text-xs text-slate-500">Tidak ada listing yang ditemukan.</p>
           </div>
         ) : (
@@ -225,7 +225,7 @@ Berminat survey unit fisik atau simulasi perhitungan KPR? Hubungi saya untuk jad
             return (
               <div
                 key={prop.id}
-                className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs transition-shadow"
+                className="bg-white border border-stone-200/90 rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs hover:border-emerald-300 transition-all flex flex-col justify-between"
               >
                 {/* Visual Architectural Banner */}
                 <PropertyImage

@@ -182,7 +182,7 @@ const PipelineViewComponent: React.FC<PipelineViewProps> = ({
       )}
 
       {/* Summary KPI Strip */}
-      <div className="grid grid-cols-2 gap-3 p-3 bg-white border border-stone-200 rounded-2xl shadow-2xs">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-white border border-stone-200 rounded-2xl shadow-2xs">
         <div>
           <span className="text-[10px] text-stone-400 block font-mono">PIPELINE AKTIF</span>
           <span className="text-base font-bold font-mono text-stone-900 tabular-nums">
@@ -201,9 +201,24 @@ const PipelineViewComponent: React.FC<PipelineViewProps> = ({
             ({closedDealsCount} transaksi)
           </span>
         </div>
+        <div className="hidden lg:block border-l border-stone-100 pl-3">
+          <span className="text-[10px] text-stone-400 block font-mono">TOTAL TRANSAKSI</span>
+          <span className="text-base font-bold font-mono text-stone-900 tabular-nums">
+            {deals.length}
+          </span>
+          <span className="text-[11px] text-stone-500 ml-1">
+            keseluruhan
+          </span>
+        </div>
+        <div className="hidden lg:block border-l border-stone-100 pl-3">
+          <span className="text-[10px] text-stone-400 block font-mono">TAHAP TERTINGGI</span>
+          <span className="text-sm font-bold font-mono text-emerald-700">
+            {dealsByStage.closed_won.length > 0 ? 'Akad Selesai' : dealsByStage.booking_fee.length > 0 ? 'UTJ / Booking' : 'Prospek & Survey'}
+          </span>
+        </div>
       </div>
 
-      {/* Stage Filter Switcher for Mobile Rapid View */}
+      {/* Stage Filter Switcher for Mobile Rapid View (Hidden on large screens when all stages fit) */}
       <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl overflow-x-auto text-xs border border-stone-200">
         <button
           onClick={() => setActiveFilterStage('all')}
@@ -213,7 +228,7 @@ const PipelineViewComponent: React.FC<PipelineViewProps> = ({
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
-          Semua ({deals.length})
+          Semua Tahap ({deals.length})
         </button>
         {STAGES.map((st) => (
           <button
@@ -230,14 +245,14 @@ const PipelineViewComponent: React.FC<PipelineViewProps> = ({
         ))}
       </div>
 
-      {/* Kanban Board Columns */}
-      <div className="space-y-5">
+      {/* Kanban Board Columns: Horizontal multi-column board on Laptop (5 columns), vertical list on Mobile */}
+      <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-4 items-start">
         {displayedStages.map((stageConfig) => {
           const stageDeals = dealsByStage[stageConfig.id] || [];
           const stageTotal = stageTotals[stageConfig.id] || 0;
 
           return (
-            <div key={stageConfig.id} className="space-y-2.5">
+            <div key={stageConfig.id} className="space-y-2.5 lg:bg-stone-100/70 lg:p-3 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:min-h-[500px]">
               {/* Stage Header */}
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
