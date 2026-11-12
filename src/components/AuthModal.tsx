@@ -463,7 +463,14 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
         {/* 2. REGISTRATION FORM (IMPROVED ROLE & RELATIONSHIPS)              */}
         {/* ================================================================= */}
         {mode === 'register' && (
-          <form onSubmit={handleRegisterSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          <form 
+            onSubmit={handleRegisterSubmit} 
+            autoComplete="off" 
+            autoCapitalize="off" 
+            autoCorrect="off" 
+            spellCheck={false}
+            className="p-5 overflow-y-auto space-y-4 text-xs"
+          >
             <div>
               <h3 className="font-bold text-stone-900 text-base">Pendaftaran Akun Baru</h3>
               <p className="text-stone-500 text-xs mt-0.5">
@@ -574,6 +581,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                     <input
                       type="text"
                       required
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      data-lpignore="true"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Nama Lengkap Anda"
@@ -589,6 +600,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                     <input
                       type="tel"
                       required
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      data-lpignore="true"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+628123456789"
@@ -605,6 +620,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                   <input
                     type="email"
                     required
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    data-lpignore="true"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="nama@perusahaan.co.id"
@@ -690,6 +709,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                       <input
                         type="text"
                         required
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        data-lpignore="true"
                         value={newCompanyName}
                         onChange={(e) => setNewCompanyName(e.target.value)}
                         placeholder="Contoh: Wenakta Residence / Graha Property"
@@ -701,6 +724,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                       <label className="block font-medium text-stone-700 mb-1">Alamat Kantor Perusahaan *</label>
                       <input
                         type="text"
+                        autoComplete="new-password"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        data-lpignore="true"
                         value={newCompanyAddress}
                         onChange={(e) => setNewCompanyAddress(e.target.value)}
                         placeholder="Alamat kantor pusat perusahaan"
@@ -714,6 +741,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <input
                           type="text"
                           required
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={newBranchName}
                           onChange={(e) => setNewBranchName(e.target.value)}
                           placeholder="Contoh: Cabang Garut / Cabang BSD"
@@ -725,6 +756,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <input
                           type="text"
                           required
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder="Contoh: Garut / Tangerang"
@@ -738,6 +773,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <label className="block font-medium text-stone-700 mb-1">Alamat Kantor Cabang *</label>
                         <input
                           type="text"
+                          autoComplete="new-password"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={newBranchAddress}
                           onChange={(e) => setNewBranchAddress(e.target.value)}
                           placeholder="Alamat fisik kantor cabang"
@@ -748,6 +787,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <label className="block font-medium text-stone-700 mb-1">Jabatan Anda *</label>
                         <input
                           type="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={position}
                           onChange={(e) => setPosition(e.target.value)}
                           placeholder="Contoh: Branch Manager / Principal"
@@ -788,6 +831,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <input
                           type="text"
                           required
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={newBranchName}
                           onChange={(e) => setNewBranchName(e.target.value)}
                           placeholder="Contoh: Cabang Garut"
@@ -799,6 +846,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <input
                           type="text"
                           required
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder="Kota Cabang"
@@ -812,6 +863,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <label className="block font-medium text-stone-700 mb-1">Alamat Kantor Cabang *</label>
                         <input
                           type="text"
+                          autoComplete="new-password"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={newBranchAddress}
                           onChange={(e) => setNewBranchAddress(e.target.value)}
                           placeholder="Alamat kantor cabang"
@@ -822,6 +877,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <label className="block font-medium text-stone-700 mb-1">Jabatan Anda *</label>
                         <input
                           type="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={position}
                           onChange={(e) => setPosition(e.target.value)}
                           placeholder="Branch Manager / Admin Cabang"
@@ -888,6 +947,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                         <input
                           type="text"
                           required
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          data-lpignore="true"
                           value={customCompanyName}
                           onChange={(e) => setCustomCompanyName(e.target.value)}
                           placeholder="Contoh: PT Graha Properti Indonesia / Era Jaya"
@@ -932,6 +995,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                           <input
                             type="text"
                             required
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            data-lpignore="true"
                             value={customBranchName}
                             onChange={(e) => setCustomBranchName(e.target.value)}
                             placeholder="Contoh: Cabang Pusat / Cabang Garut"
@@ -962,6 +1029,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                                 <input
                                   type="text"
                                   required
+                                  autoComplete="off"
+                                  autoCorrect="off"
+                                  spellCheck={false}
+                                  data-lpignore="true"
                                   value={customBranchName}
                                   onChange={(e) => setCustomBranchName(e.target.value)}
                                   placeholder="Contoh: Cabang Baru / Area Operasional"
@@ -980,6 +1051,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                             <KeyRound className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                               type="text"
+                              autoComplete="off"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              data-lpignore="true"
                               value={inviteCode}
                               onChange={(e) => setInviteCode(e.target.value)}
                               placeholder="Misal: INV-2026"
@@ -991,6 +1066,10 @@ export const AuthModal: React.FC<AuthModalProps> = memo(({
                           <label className="block font-medium text-stone-700 mb-1">Jabatan / Spesialisasi</label>
                           <input
                             type="text"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            data-lpignore="true"
                             value={position}
                             onChange={(e) => setPosition(e.target.value)}
                             placeholder="Contoh: Agen Properti Hunian"
