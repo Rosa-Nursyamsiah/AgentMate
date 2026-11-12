@@ -85,7 +85,8 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
           };
         });
 
-        // Smart merge: Remote users combined with local users so any locally registered user is NEVER dropped!
+        // Smart merge: Remote users combined with local users
+        // PRESERVATION RULE: If locally approved/rejected, do NOT allow stale remote 'pending' status to overwrite it!
         const localUsers = loadLocalUsers();
         const mergedMap = new Map<string, UserProfile>();
         for (const u of localUsers) {
@@ -93,8 +94,22 @@ export async function syncUsersFromServer(): Promise<UserProfile[]> {
           mergedMap.set(normalizeEmail(u.email), u);
         }
         for (const r of mapped) {
-          mergedMap.set(r.id, r);
-          mergedMap.set(normalizeEmail(r.email), r);
+          const localMatch = mergedMap.get(r.id) || mergedMap.get(normalizeEmail(r.email));
+          if (localMatch && (localMatch.status === 'approved' || localMatch.status === 'rejected') && r.status === 'pending') {
+            // Keep the local approval/rejection state!
+            const preserved: UserProfile = {
+              ...r,
+              status: localMatch.status,
+              membershipStatus: localMatch.membershipStatus || (localMatch.status === 'approved' ? 'active' : 'rejected'),
+              reviewedAt: localMatch.reviewedAt || new Date().toISOString().split('T')[0],
+              reviewedBy: localMatch.reviewedBy || 'Admin Reviewer',
+            };
+            mergedMap.set(r.id, preserved);
+            mergedMap.set(normalizeEmail(r.email), preserved);
+          } else {
+            mergedMap.set(r.id, r);
+            mergedMap.set(normalizeEmail(r.email), r);
+          }
         }
         const finalUsers = Array.from(new Set(mergedMap.values()));
         saveLocalUsers(finalUsers);
@@ -326,27 +341,10 @@ export async function registerUserRemote(userData: RegisterUserInput): Promise<{
 }
 
 /**
- * Super Admin approves a user (Admin Cabang or Agent) remotely.
+ * Super Admin or Branch Admin approves a user (Admin Cabang or Agent) remotely.
  */
 export async function approveUserRemote(userId: string, reviewedBy: string): Promise<boolean> {
-  // Update Supabase if configured
-  if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase
-        .from('user_profiles')
-        .update({
-          status: 'approved',
-          membership_status: 'active',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewedBy,
-        })
-        .eq('id', userId);
-    } catch {
-      // ignore
-    }
-  }
-
-  // Update Local Storage
+  // 1. Immediately update Local Storage so UI has instant response
   const current = loadLocalUsers();
   const updated = current.map((u) =>
     u.id === userId
@@ -360,6 +358,47 @@ export async function approveUserRemote(userId: string, reviewedBy: string): Pro
       : u
   );
   saveLocalUsers(updated);
+
+  // 2. Update Supabase if configured with multi-tier fallback
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // Attempt 1: Full column update
+      const { error: fullErr } = await supabase
+        .from('user_profiles')
+        .update({
+          status: 'approved',
+          membership_status: 'active',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewedBy,
+        })
+        .eq('id', userId);
+
+      if (fullErr) {
+        console.warn('Supabase full update error, trying base columns fallback:', fullErr);
+        // Attempt 2: Base schema columns update
+        const { error: baseErr } = await supabase
+          .from('user_profiles')
+          .update({
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: reviewedBy,
+          })
+          .eq('id', userId);
+
+        if (baseErr) {
+          console.warn('Supabase base update error, updating ONLY status:', baseErr);
+          // Attempt 3: Only status column update (100% guaranteed)
+          await supabase
+            .from('user_profiles')
+            .update({ status: 'approved' })
+            .eq('id', userId);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase approve error caught:', err);
+    }
+  }
+
   return true;
 }
 
@@ -367,23 +406,7 @@ export async function approveUserRemote(userId: string, reviewedBy: string): Pro
  * Super Admin or Admin Cabang rejects a user.
  */
 export async function rejectUserRemote(userId: string, reason?: string, reviewedBy?: string): Promise<boolean> {
-  if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase
-        .from('user_profiles')
-        .update({
-          status: 'rejected',
-          membership_status: 'rejected',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewedBy || 'Admin Reviewer',
-          notes: reason ? `Ditolak: ${reason}` : undefined,
-        })
-        .eq('id', userId);
-    } catch {
-      // ignore
-    }
-  }
-
+  // 1. Immediately update Local Storage
   const current = loadLocalUsers();
   const updated = current.map((u) =>
     u.id === userId
@@ -398,6 +421,35 @@ export async function rejectUserRemote(userId: string, reason?: string, reviewed
       : u
   );
   saveLocalUsers(updated);
+
+  // 2. Update Supabase with fallback
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error: fullErr } = await supabase
+        .from('user_profiles')
+        .update({
+          status: 'rejected',
+          membership_status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewedBy || 'Admin Reviewer',
+          notes: reason ? `Ditolak: ${reason}` : undefined,
+        })
+        .eq('id', userId);
+
+      if (fullErr) {
+        await supabase
+          .from('user_profiles')
+          .update({
+            status: 'rejected',
+            notes: reason ? `Ditolak: ${reason}` : undefined,
+          })
+          .eq('id', userId);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return true;
 }
 

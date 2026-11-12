@@ -581,12 +581,39 @@ export const App: React.FC = () => {
 
   // Super Admin Approval Actions
   const handleApproveUser = useCallback(async (userId: string, reviewedBy: string) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              status: 'approved',
+              membershipStatus: 'active',
+              reviewedAt: new Date().toISOString().split('T')[0],
+              reviewedBy,
+            }
+          : u
+      )
+    );
     await approveUserRemote(userId, reviewedBy);
     const latest = await syncUsersFromServer();
     setUsers(latest);
   }, []);
 
   const handleRejectUser = useCallback(async (userId: string, reason?: string) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              status: 'rejected',
+              membershipStatus: 'rejected',
+              reviewedAt: new Date().toISOString().split('T')[0],
+              reviewedBy: currentUser?.name || 'Super Admin',
+              notes: reason ? `Ditolak: ${reason}` : u.notes,
+            }
+          : u
+      )
+    );
     await rejectUserRemote(userId, reason, currentUser?.name || 'Super Admin');
     const latest = await syncUsersFromServer();
     setUsers(latest);
@@ -612,6 +639,19 @@ export const App: React.FC = () => {
   // Admin Cabang Agent Approval Actions
   const handleApproveAgentByBranch = useCallback(async (agentId: string) => {
     if (!currentUser) return;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === agentId
+          ? {
+              ...u,
+              status: 'approved',
+              membershipStatus: 'active',
+              reviewedAt: new Date().toISOString().split('T')[0],
+              reviewedBy: `${currentUser.name} (Admin Cabang)`,
+            }
+          : u
+      )
+    );
     await approveAgentByBranchAdmin(agentId, currentUser);
     const latest = await syncUsersFromServer();
     setUsers(latest);
@@ -619,6 +659,20 @@ export const App: React.FC = () => {
 
   const handleRejectAgentByBranch = useCallback(async (agentId: string, reason?: string) => {
     if (!currentUser) return;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === agentId
+          ? {
+              ...u,
+              status: 'rejected',
+              membershipStatus: 'rejected',
+              reviewedAt: new Date().toISOString().split('T')[0],
+              reviewedBy: `${currentUser.name} (Admin Cabang)`,
+              notes: reason ? `Ditolak: ${reason}` : u.notes,
+            }
+          : u
+      )
+    );
     await rejectAgentByBranchAdmin(agentId, reason || 'Ditolak oleh Admin Cabang', currentUser);
     const latest = await syncUsersFromServer();
     setUsers(latest);
