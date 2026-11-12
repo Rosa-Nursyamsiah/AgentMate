@@ -1,7 +1,12 @@
 import { UserProfile } from '../types/crm';
 import { DEFAULT_USERS, SUPER_ADMIN_EMAIL, isSuperAdminEmail, normalizeEmail } from '../data/defaultData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { registerNewCompanyWithBranch, registerNewBranchForExistingCompany } from './companyService';
+import { 
+  registerNewCompanyWithBranch, 
+  registerNewBranchForExistingCompany,
+  loadLocalCompanies,
+  loadLocalBranches
+} from './companyService';
 
 const STORAGE_KEY = 'agenmate_users_v1';
 
@@ -206,6 +211,37 @@ export async function registerUserRemote(userData: RegisterUserInput): Promise<{
     });
     finalBranchId = branchRes.id;
     finalBranchName = branchRes.name;
+  }
+
+  // 3. Automatic Company & Branch linking for simplified registration
+  if (!finalCompanyId && !isSuper) {
+    const existingCompanies = loadLocalCompanies();
+    const matchCo = existingCompanies.find(
+      (c) => c.name.toLowerCase().trim() === finalCompanyName.toLowerCase().trim()
+    );
+    if (matchCo) {
+      finalCompanyId = matchCo.id;
+      finalCompanyName = matchCo.name;
+      const existingBranches = loadLocalBranches().filter((b) => b.companyId === matchCo.id);
+      const matchBr = existingBranches.find(
+        (b) => b.city.toLowerCase() === finalCity.toLowerCase() || b.name.toLowerCase().includes(finalCity.toLowerCase())
+      );
+      if (matchBr) {
+        finalBranchId = matchBr.id;
+        finalBranchName = matchBr.name;
+      } else if (existingBranches.length > 0) {
+        finalBranchId = existingBranches[0].id;
+        finalBranchName = existingBranches[0].name;
+      } else {
+        finalBranchId = `${matchCo.id}-C01`;
+        finalBranchName = `Cabang ${finalCity}`;
+      }
+    } else {
+      const cleanPrefix = finalCompanyName.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'CMP';
+      finalCompanyId = `CMP-${cleanPrefix}${Math.floor(100 + Math.random() * 900)}`;
+      finalBranchId = `${finalCompanyId}-C01`;
+      finalBranchName = `Cabang ${finalCity}`;
+    }
   }
 
   const assignedRole = isSuper ? 'super_admin' : (userData.role === 'super_admin' ? 'user' : userData.role);
