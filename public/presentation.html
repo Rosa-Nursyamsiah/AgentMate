@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentasi Agent Mate CRM - Rosa Nursyamsiah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0c120c;
+      color: #1c1917;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .slide-card {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <!-- Top Presentation Bar -->
+  <header class="h-14 bg-stone-900 border-b border-stone-800 flex items-center justify-between px-6 text-white text-xs z-50">
+    <div class="flex items-center gap-3">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="font-bold tracking-tight text-stone-200">Agent Mate CRM Property Mobile</span>
+      <span class="text-stone-500 font-mono">|</span>
+      <span class="text-emerald-400 font-medium">Rosa Nursyamsiah (NPM: 24025123042)</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="slideCounter" class="font-mono text-stone-400 text-xs">Slide 1 / 12</span>
+      <button onclick="toggleFullscreen()" class="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs transition-colors cursor-pointer">
+        🖥️ Layar Penuh (F)
+      </button>
+    </div>
+  </header>
+
+  <!-- Slide Canvas Container -->
+  <main class="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden bg-stone-950">
+    <!-- Ambient Glows -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Active Slide Box -->
+    <div id="slideContent" class="w-full max-w-5xl h-[560px] md:h-[620px] bg-[#FDFBF7] rounded-3xl shadow-2xl border border-stone-200/80 p-8 md:p-12 flex flex-col justify-between relative overflow-hidden slide-card">
+      <!-- Dynamic Content will be injected by JavaScript -->
+    </div>
+  </main>
+
+  <!-- Bottom Navigation Controller -->
+  <footer class="h-16 bg-stone-900 border-t border-stone-800 flex items-center justify-between px-6 z-50">
+    <div class="text-xs text-stone-400 hidden sm:block">
+      Navigasi: Gunakan tombol <kbd class="px-2 py-0.5 bg-stone-800 rounded border border-stone-700 font-mono">←</kbd> dan <kbd class="px-2 py-0.5 bg-stone-800 rounded border border-stone-700 font-mono">→</kbd> pada keyboard
+    </div>
+    <div class="flex items-center gap-3 mx-auto sm:mx-0">
+      <button id="prevBtn" onclick="prevSlide()" class="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95">
+        ← Sebelumnya
+      </button>
+      <div id="slideIndicators" class="flex items-center gap-1.5 px-2">
+        <!-- Dots will be rendered here -->
+      </div>
+      <button id="nextBtn" onclick="nextSlide()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-600/30 active:scale-95">
+        Selanjutnya →
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    const slides = [
+      // SLIDE 1: COVER
+      {
+        tag: "OFFICIAL PITCH DECK",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Agent Mate CRM Property Mobile",
+        subtitle: "Solusi Terintegrasi Pusat Kendali Agen & Kantor Broker Properti Indonesia",
+        tagline: "“Tutup Lebih Banyak Closing Properti dalam Satu Genggaman”",
+        layout: "cover",
+        presenter: {
+          name: "Rosa Nursyamsiah",
+          npm: "24025123042",
+          role: "Product Presenter & Developer"
+        },
+        highlights: [
+          "Mobile-First Architecture",
+          "Multi-Tier Company Hierarchy",
+          "Automated WhatsApp Flyer Hub",
+          "Real Estate Smart Matching"
+        ]
+      },
+
+      // SLIDE 2: THE PROBLEM
+      {
+        tag: "LATAR BELAKANG & TANTANGAN INDUSTRI",
+        tagColor: "bg-rose-100 text-rose-800 border-rose-200",
+        title: "Mengapa Banyak Deal Properti Gagal Closing?",
+        subtitle: "Tantangan operasional nyata yang dihadapi kantor broker dan agen properti di lapangan",
+        layout: "cards3",
+        cards: [
+          {
+            icon: "📂",
+            title: "Database Tercecer & Hilang",
+            desc: "Kontak pembeli dan stok unit listing masih dicatat di memo HP, buku tulis, atau chat WhatsApp pribadi yang rawan terhapus."
+          },
+          {
+            icon: "⏰",
+            title: "Lost Closing Akibat Lupa Follow-Up",
+            desc: "Pembelian properti butuh pertimbangan panjang. Ketiadaan pengingat otomatis membuat agen lupa mengontak buyer pasca survei lokasi."
+          },
+          {
+            icon: "🏢",
+            title: "Kebocoran Data & Otoritas Cabang",
+            desc: "Sulitnya pimpinan kantor memantau deal para agen dan tingginya risiko kebocoran data listing ke akun yang belum terverifikasi."
+          }
+        ]
+      },
+
+      // SLIDE 3: THE SOLUTION
+      {
+        tag: "SOLUSI PRODUK (THE SOLUTION)",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Agent Mate: CRM Mobile Khusus Properti",
+        subtitle: "Menjawab kebutuhan mobilitas agen lapangan dengan sistem keamanan multi-perusahaan",
+        layout: "split",
+        left: {
+          title: "Prinsip Utama Agent Mate",
+          items: [
+            "📱 <strong>Mobile-First & Responsif Laptop</strong>: Nyaman dibuka di HP saat survei lokasi, maupun di laptop kantor.",
+            "⚡ <strong>Pencocokan Cerdas (Smart Matching)</strong>: Otomatis menghubungkan budget buyer dengan unit listing siap jual.",
+            "💬 <strong>One-Click WhatsApp Integration</strong>: Mengirim brosur teks dan menyapa klien dalam hitungan detik.",
+            "🔒 <strong>Multi-Tier Security Approval Gateway</strong>: Akun baru tidak dapat melihat data sensitif sebelum di-ACC resmi."
+          ]
+        },
+        rightMetrics: [
+          { label: "Target Waktu Respon", val: "< 15 Detik" },
+          { label: "Pencegahan Lost Leads", val: "100% Tercatat" },
+          { label: "Kesiapan Lapangan", val: "Mobile Ready" }
+        ]
+      },
+
+      // SLIDE 4: ROLES & HIERARCHY
+      {
+        tag: "TATA KELOLA AKUN BERJENJANG",
+        tagColor: "bg-teal-100 text-teal-800 border-teal-200",
+        title: "Hierarki Akun Multi-Perusahaan & Multi-Cabang",
+        subtitle: "Hubungan akun berbasis Company ID dan Branch ID unik yang dihasilkan sistem",
+        layout: "cards3",
+        cards: [
+          {
+            icon: "👑",
+            title: "Super Admin (Owner)",
+            desc: "Pusat wewenang utama. Memverifikasi pendaftaran perusahaan baru, meninjau Admin Cabang, dan mengawasi seluruh sistem."
+          },
+          {
+            icon: "🏢",
+            title: "Admin Cabang (Manager)",
+            desc: "Mengelola operasional kantor cabang (Branch ID). Menerima atau menolak permohonan agen baru di cabangnya."
+          },
+          {
+            icon: "💼",
+            title: "Agen Properti (Sales)",
+            desc: "Ujung tombak pemasaran. Mengelola kontak buyer, menginput listing rumah, menjadwalkan survei, dan mengawal closing."
+          }
+        ]
+      },
+
+      // SLIDE 5: APPROVAL GATEWAY
+      {
+        tag: "KEAMANAN & INTEGRITAS DATA",
+        tagColor: "bg-amber-100 text-amber-800 border-amber-200",
+        title: "Gerbang Persetujuan: Pending Approval Gateway",
+        subtitle: "Mencegah agen fiktif atau kebocoran listing sebelum diverifikasi pihak yang berwenang",
+        layout: "split",
+        left: {
+          title: "Mekanisme Perlindungan Akun",
+          items: [
+            "🛡️ <strong>Kunci Sesi Instan</strong>: Setiap pendaftar baru langsung ditahan di layar khusus 'Pending Approval'.",
+            "📋 <strong>Transparansi Peninjau</strong>: Layar menampilkan jelas siapa peninjau akun (Super Admin untuk Admin Cabang; Admin Cabang untuk Agen).",
+            "🚫 <strong>Isolasi Database</strong>: Akses ke kontak klien, katalog properti, dan pipeline dikunci di tingkat database sebelum status 'Approved'.",
+            "🔄 <strong>Auto-Polling Unlock</strong>: Begitu disetujui, layar otomatis berganti ke dashboard operasional tanpa perlu login ulang."
+          ]
+        },
+        rightMetrics: [
+          { label: "Status Awal", val: "PENDING" },
+          { label: "Akses Sebelum ACC", val: "0% Terkunci" },
+          { label: "Waktu Verifikasi", val: "< 1 Menit" }
+        ]
+      },
+
+      // SLIDE 6: EXECUTIVE DASHBOARD & SMART MATCHING
+      {
+        tag: "FITUR UTAMA 1",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Executive Dashboard & Smart Matching",
+        subtitle: "Pemantauan KPI finansial real estate dan algoritma rekomendasi properti otomatis",
+        layout: "metricsGrid",
+        metrics: [
+          { title: "Total Pipeline Value", val: "Format Rupiah", desc: "Akumulasi nilai transaksi yang sedang berjalan" },
+          { title: "Estimasi Komisi Berjalan", val: "Proyeksi 2.5%", desc: "Komisi potensial yang siap diterima agen" },
+          { title: "Deal Aktif & Listing", val: "Real-Time Counter", desc: "Jumlah transaksi aktif dan unit siap jual" },
+          { title: "Closed Won Revenue", val: "Closing Nyata", desc: "Total nominal closing yang berhasil terealisasi" }
+        ],
+        footerNote: "✨ Smart Match Alert: Otomatis memberitahu agen jika ada calon pembeli yang budget-nya cocok dengan rumah yang baru di-listing!"
+      },
+
+      // SLIDE 7: CONTACTS CRM & WHATSAPP INTEGRATION
+      {
+        tag: "FITUR UTAMA 2",
+        tagColor: "bg-teal-100 text-teal-800 border-teal-200",
+        title: "Manajemen Kontak & Integrasi WhatsApp",
+        subtitle: "Segmentasi lengkap calon pelanggan properti dan komunikasi instan 1-klik",
+        layout: "split",
+        left: {
+          title: "Segmentasi Klien Properti",
+          items: [
+            "👤 <strong>Buyer (Pembeli)</strong>: Pencatatan budget min-max, preferensi lokasi, dan skema KPR / Cash.",
+            "🔑 <strong>Tenant (Penyewa)</strong>: Klien sewa rumah, apartemen, atau ruko komersial.",
+            "🏡 <strong>Seller (Penjual)</strong>: Pemilik rumah yang menitipkan unit untuk dipasarkan.",
+            "🏢 <strong>Landlord (Pemilik Sewa)</strong>: Investor pemilik properti sewa.",
+            "📲 <strong>One-Click WhatsApp</strong>: Membuka chat WA dengan format salam ramah broker properti secara instan."
+          ]
+        },
+        rightMetrics: [
+          { label: "Metode Bayar", val: "KPR / Cash / Bertahap" },
+          { label: "Segmentasi", val: "4 Tipe Klien" },
+          { label: "Komunikasi", val: "Direct WhatsApp" }
+        ]
+      },
+
+      // SLIDE 8: PROPERTY INVENTORY & LEGALITAS
+      {
+        tag: "FITUR UTAMA 3",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Inventaris Listing & Standar Sertifikat Indonesia",
+        subtitle: "Katalog properti lengkap dengan spesifikasi teknis dan legalitas resmi",
+        layout: "cards3",
+        cards: [
+          {
+            icon: "📜",
+            title: "Legalitas Sertifikat Lengkap",
+            desc: "Pilihan sertifikat tanah resmi Indonesia: SHM, HGB, Strata Title, Girik/AJB, dan PPJB Lunas."
+          },
+          {
+            icon: "🏗️",
+            title: "Spesifikasi Detail Unit",
+            desc: "Luas Tanah (LT), Luas Bangunan (LB), Kamar Tidur, Kamar Mandi, Listrik, Kota, dan Status Unit (Available, Sold, Rented)."
+          },
+          {
+            icon: "📄",
+            title: "WhatsApp Property Flyer Generator",
+            desc: "Sekali klik, menghasilkan ringkasan teks deskripsi rumah lengkap yang siap diteruskan ke calon pembeli."
+          }
+        ]
+      },
+
+      // SLIDE 9: KANBAN DEAL PIPELINE
+      {
+        tag: "FITUR UTAMA 4",
+        tagColor: "bg-teal-100 text-teal-800 border-teal-200",
+        title: "Papan Penjualan 5 Tahap (Deal Pipeline)",
+        subtitle: "Memantau siklus transaksi properti secara visual dari prospek baru hingga komisi cair",
+        layout: "pipeline5",
+        stages: [
+          { step: "01", name: "New Lead", prob: "25%", desc: "Prospek baru berminat" },
+          { step: "02", name: "Site Visit", prob: "45%", desc: "Survei unit di lokasi" },
+          { step: "03", name: "Negotiation", prob: "65%", desc: "Nego harga & cara bayar" },
+          { step: "04", name: "Booking Fee", prob: "90%", desc: "Tanda Jadi (UTJ) & KPR" },
+          { step: "05", name: "Closed Won", prob: "100%", desc: "Akad / AJB Lunas!" }
+        ]
+      },
+
+      // SLIDE 10: SITE VISITS & FOLLOW-UP REMINDERS
+      {
+        tag: "FITUR UTAMA 5",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Jadwal Survei Lokasi & Daily Follow-Up",
+        subtitle: "Mengawal komitmen calon pembeli setelah melihat langsung unit properti",
+        layout: "split",
+        left: {
+          title: "Siklus Kunjungan Properti",
+          items: [
+            "📅 <strong>Site Visit Scheduling</strong>: Menghubungkan pembeli, unit listing, dan jadwal kunjungan secara teratur.",
+            "📝 <strong>Catatan Feedback Pasca Survei</strong>: Menyimpan kesan pembeli (misal: 'Suka pencahayaannya, tapi minta nego 5%').",
+            "⏰ <strong>Auto-Reminder Generator</strong>: Menentukan tanggal follow-up berikutnya yang otomatis masuk ke To-Do List Beranda.",
+            "✅ <strong>Interactive Checklist</strong>: Centang tugas follow-up hari ini saat sudah ditelepon/di-WA."
+          ]
+        },
+        rightMetrics: [
+          { label: "Status Survei", val: "Terjadwal / Selesai" },
+          { label: "Pencegahan Cold Lead", val: "Pengingat Harian" },
+          { label: "Kerapian Arsip", val: "Feedback Tersimpan" }
+        ]
+      },
+
+      // SLIDE 11: TECHNOLOGY & RESILIENCE
+      {
+        tag: "ARSITEKTUR & KEUNGGULAN TEKNIS",
+        tagColor: "bg-teal-100 text-teal-800 border-teal-200",
+        title: "Infrastruktur Cloud yang Tangguh & Aman",
+        subtitle: "Dirancang untuk penggunaan di lapangan dengan ketahanan jaringan optimal",
+        layout: "cards3",
+        cards: [
+          {
+            icon: "☁️",
+            title: "Cloud Supabase PostgreSQL",
+            desc: "Database relational berkecepatan tinggi dengan Row-Level Security (RLS) untuk isolasi data antar cabang."
+          },
+          {
+            icon: "🔄",
+            title: "Smart Local-Merge Resilience",
+            desc: "Pendaftaran akun baru tetap aman di browser lokal bahkan saat sinyal seluler di proyek perumahan tidak stabil."
+          },
+          {
+            icon: "💻",
+            title: "Dual-Device Optimization",
+            desc: "Desain responsif yang menyajikan navigasi bawah di HP dan sidebar navigasi elegan saat dibuka di Laptop."
+          }
+        ]
+      },
+
+      // SLIDE 12: CONCLUSION
+      {
+        tag: "KESIMPULAN & PENUTUP",
+        tagColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: "Agent Mate: Menuju Era Digital Broker Properti",
+        subtitle: "Meningkatkan produktivitas agen, mengamankan data kantor cabang, dan melipatgandakan closing",
+        layout: "conclusion",
+        callout: "“Satu Platform, Semua Listing, Ratusan Closing.”",
+        presenter: {
+          name: "Rosa Nursyamsiah",
+          npm: "24025123042"
+        },
+        demoLink: "https://agent-mate-indol.vercel.app"
+      }
+    ];
+
+    let currentSlide = 0;
+
+    function renderSlide(index) {
+      const s = slides[index];
+      const container = document.getElementById('slideContent');
+      document.getElementById('slideCounter').textContent = `Slide ${index + 1} / ${slides.length}`;
+
+      let html = `
+        <!-- Slide Top Badge & Category -->
+        <div class="flex items-center justify-between border-b border-stone-200/80 pb-3 mb-4">
+          <span class="px-3 py-1 rounded-full text-[11px] font-bold font-mono tracking-wider uppercase border ${s.tagColor}">
+            ${s.tag}
+          </span>
+          <span class="text-[11px] font-mono text-stone-400">Agent Mate Presentation</span>
+        </div>
+      `;
+
+      if (s.layout === 'cover') {
+        html += `
+          <div class="flex-1 flex flex-col justify-center items-center text-center space-y-5 my-auto">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-700 to-teal-600 text-white flex items-center justify-center text-2xl font-extrabold shadow-lg shadow-emerald-700/25">
+              🏡
+            </div>
+            <div>
+              <h1 class="text-3xl md:text-5xl font-extrabold text-stone-900 tracking-tight">${s.title}</h1>
+              <p class="text-sm md:text-lg text-emerald-800 font-semibold mt-2">${s.subtitle}</p>
+              <p class="text-xs md:text-sm text-stone-500 italic mt-1">${s.tagline}</p>
+            </div>
+            
+            <!-- Presenter Badge -->
+            <div class="p-3.5 bg-white border border-stone-200 rounded-2xl shadow-sm inline-flex items-center gap-4 text-left">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold text-base">
+                👤
+              </div>
+              <div>
+                <p class="text-[11px] text-stone-400 uppercase font-mono tracking-wider">Pemapar Presentasi</p>
+                <h4 class="text-sm font-extrabold text-stone-900">${s.presenter.name}</h4>
+                <p class="text-xs font-mono font-bold text-emerald-700">NPM: ${s.presenter.npm}</p>
+              </div>
+            </div>
+
+            <!-- Features Highlights Pills -->
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+              ${s.highlights.map(h => `<span class="px-3 py-1 bg-emerald-50/70 border border-emerald-200/70 text-emerald-900 text-[11px] font-medium rounded-full">✨ ${h}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      } else if (s.layout === 'cards3') {
+        html += `
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight">${s.title}</h2>
+            <p class="text-xs md:text-sm text-stone-600 mt-1">${s.subtitle}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-auto pt-2">
+            ${s.cards.map(c => `
+              <div class="p-5 bg-white border border-stone-200/90 rounded-2xl shadow-xs hover:border-emerald-300 transition-all flex flex-col justify-between">
+                <div>
+                  <div class="text-3xl mb-3">${c.icon}</div>
+                  <h3 class="font-bold text-stone-900 text-sm md:text-base">${c.title}</h3>
+                  <p class="text-xs text-stone-600 mt-2 leading-relaxed">${c.desc}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (s.layout === 'split') {
+        html += `
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight">${s.title}</h2>
+            <p class="text-xs md:text-sm text-stone-600 mt-1">${s.subtitle}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 my-auto pt-2 items-center">
+            <div class="md:col-span-8 bg-white p-5 rounded-2xl border border-stone-200/90 shadow-xs space-y-3">
+              <h4 class="font-bold text-xs uppercase tracking-wider text-emerald-800 font-mono">${s.left.title}</h4>
+              <ul class="space-y-2.5 text-xs text-stone-700 leading-relaxed">
+                ${s.left.items.map(it => `<li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">•</span><span>${it}</span></li>`).join('')}
+              </ul>
+            </div>
+            <div class="md:col-span-4 space-y-3">
+              ${s.rightMetrics.map(m => `
+                <div class="p-4 bg-gradient-to-br from-emerald-800 to-teal-900 text-white rounded-2xl shadow-xs">
+                  <p class="text-[10px] uppercase font-mono tracking-wider text-emerald-200">${m.label}</p>
+                  <p class="text-lg md:text-xl font-bold font-mono mt-0.5">${m.val}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (s.layout === 'metricsGrid') {
+        html += `
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight">${s.title}</h2>
+            <p class="text-xs md:text-sm text-stone-600 mt-1">${s.subtitle}</p>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 my-auto pt-2">
+            ${s.metrics.map(m => `
+              <div class="p-4 bg-white border border-stone-200/90 rounded-2xl shadow-xs">
+                <span class="text-[10px] font-mono text-emerald-700 uppercase block font-semibold">${m.title}</span>
+                <span class="text-base md:text-lg font-extrabold text-stone-900 block mt-1">${m.val}</span>
+                <span class="text-[11px] text-stone-500 block mt-1.5 leading-snug">${m.desc}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium">
+            ${s.footerNote}
+          </div>
+        `;
+      } else if (s.layout === 'pipeline5') {
+        html += `
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight">${s.title}</h2>
+            <p class="text-xs md:text-sm text-stone-600 mt-1">${s.subtitle}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 my-auto pt-2">
+            ${s.stages.map((st, i) => `
+              <div class="p-4 bg-white border border-stone-200/90 rounded-2xl shadow-xs relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute top-0 left-0 right-0 h-1 ${i === 4 ? 'bg-emerald-600' : 'bg-teal-600'}"></div>
+                <div>
+                  <div class="flex items-center justify-between text-xs font-mono font-bold text-stone-400 mb-1">
+                    <span>${st.step}</span>
+                    <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">${st.prob}</span>
+                  </div>
+                  <h4 class="font-extrabold text-stone-900 text-sm mt-1">${st.name}</h4>
+                  <p class="text-[11px] text-stone-500 mt-2">${st.desc}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <p class="text-center text-xs text-stone-500">Kalkulasi komisi agen (2.5%) terhitung otomatis secara proporsional sesuai pergerakan tahap deal.</p>
+        `;
+      } else if (s.layout === 'conclusion') {
+        html += `
+          <div class="flex-1 flex flex-col justify-center items-center text-center space-y-6 my-auto">
+            <span class="text-4xl">🚀</span>
+            <div>
+              <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-tight">${s.title}</h2>
+              <p class="text-sm md:text-base text-stone-600 mt-2 max-w-xl mx-auto">${s.subtitle}</p>
+            </div>
+            
+            <div class="p-5 bg-gradient-to-r from-emerald-800 to-teal-800 text-white rounded-3xl shadow-lg shadow-emerald-800/20 max-w-lg">
+              <p class="text-lg md:text-xl font-bold font-mono tracking-tight">${s.callout}</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-4 text-xs text-stone-600">
+              <div class="px-4 py-2 bg-white border border-stone-200 rounded-xl">
+                <span>Presenter: <strong>${s.presenter.name}</strong> (${s.presenter.npm})</span>
+              </div>
+              <a href="${s.demoLink}" target="_blank" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs transition-all">
+                Buka Live Demo Website ↗
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
+        <!-- Slide Bottom Footer Brand -->
+        <div class="pt-3 border-t border-stone-200/80 flex items-center justify-between text-[11px] text-stone-400 font-mono">
+          <span>Agent Mate CRM • Rosa Nursyamsiah</span>
+          <span>Halaman ${index + 1} dari ${slides.length}</span>
+        </div>
+      `;
+
+      container.innerHTML = html;
+
+      // Update indicators
+      const indContainer = document.getElementById('slideIndicators');
+      indContainer.innerHTML = slides.map((_, i) => `
+        <button onclick="goToSlide(${i})" class="w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${i === index ? 'bg-emerald-500 w-6' : 'bg-stone-700 hover:bg-stone-500'}"></button>
+      `).join('');
+
+      // Update button state
+      document.getElementById('prevBtn').disabled = index === 0;
+      document.getElementById('prevBtn').style.opacity = index === 0 ? '0.4' : '1';
+      document.getElementById('nextBtn').textContent = index === slides.length - 1 ? 'Selesai 🏁' : 'Selanjutnya →';
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function goToSlide(i) {
+      currentSlide = i;
+      renderSlide(currentSlide);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    });
+
+    // Initial render
+    renderSlide(0);
+  </script>
+</body>
+</html>
